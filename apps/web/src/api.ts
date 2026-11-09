@@ -1,4 +1,5 @@
 import { FUNCTIONS } from '@hst/shared';
+import { demoRequest, isStaticDemo } from './demo/engine';
 import { currentLocale } from './i18n';
 
 const TOKEN_KEY = 'hst.token';
@@ -28,6 +29,9 @@ export function clearToken(): void {
 }
 
 async function post<T>(path: string, body: unknown, auth = false): Promise<ApiSuccess<T> | ApiFailure> {
+  if (isStaticDemo()) {
+    return demoRequest(path, body, auth ? getToken() : '') as Promise<ApiSuccess<T> | ApiFailure>;
+  }
   const response = await fetch(path, {
     method: 'POST',
     headers: {
@@ -44,7 +48,7 @@ export function devLogin(email: string, password: string) {
 }
 
 export function sendEmailCode(email: string) {
-  return post<{ sent: boolean }>('/api/dev/email-code/send', { email });
+  return post<{ sent: boolean; demoCode?: string }>('/api/dev/email-code/send', { email });
 }
 
 export function verifyEmailCode(email: string, code: string) {

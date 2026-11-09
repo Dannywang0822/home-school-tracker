@@ -27,16 +27,22 @@ const route = useRoute();
 const router = useRouter();
 const title = ref('');
 const description = ref('');
-const due = ref('');
+const due = ref(defaultDue());
 const requiresSubmission = ref(true);
 const busy = ref(false);
 const error = ref('');
+
+function defaultDue(): string {
+  const date = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T18:00`;
+}
 
 async function onSubmit() {
   error.value = '';
   const dueAt = new Date(due.value).getTime();
   if (!Number.isFinite(dueAt)) {
-    error.value = t('passwordInvalid');
+    error.value = t('dueRequired');
     return;
   }
   busy.value = true;

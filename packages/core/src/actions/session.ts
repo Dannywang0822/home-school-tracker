@@ -4,8 +4,7 @@ import { AppError } from '../app-error.js';
 import { activeChildIds, displayNameOf, maskDisplayName } from '../auth/access.js';
 import { registerAction } from '../auth/registry.js';
 import type { Doc } from '../db/types.js';
-import { randomBytes } from 'node:crypto';
-import { hashInviteCode, nid, asString } from '../util.js';
+import { hashInviteCode, nid, asString, randomSecret } from '../util.js';
 
 const humanRoles = ROLES.filter((role) => role !== 'ops_mailer');
 
@@ -193,7 +192,7 @@ registerAction({
     if (!limit.allowed) {
       throw new AppError('RATE_LIMITED', '操作太频繁', { retryAfterSec: retryAfter(ctx.clock.now()) });
     }
-    const code = randomCode(6);
+    const code = randomSecret(6);
     const now = ctx.clock.now();
     await ctx.repo.insertInvite({
       _id: nid('inv_'),
@@ -321,12 +320,3 @@ function retryAfter(now: number): number {
   return Math.max(1, 3600 - Math.floor((now % 3_600_000) / 1000));
 }
 
-function randomCode(length: number): string {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const bytes = randomBytes(length);
-  let out = '';
-  for (let i = 0; i < length; i += 1) {
-    out += alphabet[(bytes[i] ?? 0) % alphabet.length];
-  }
-  return out;
-}

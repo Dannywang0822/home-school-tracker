@@ -6,9 +6,12 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "typecheck": "vue-tsc --noEmit -p tsconfig.json",
-    "build": "vite build"
+    "build": "vite build --mode pages",
+    "preview": "vite preview --host 127.0.0.1 --port 4173"
   },
   "dependencies": {
+    "@hst/core": "0.1.0",
+    "@hst/fixture": "0.1.0",
     "@hst/shared": "0.1.0",
     "pinia": "^2.3.1",
     "vant": "^4.9.21",
