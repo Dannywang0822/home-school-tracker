@@ -2,10 +2,11 @@ import { createRouter, createWebHashHistory } from 'vue-router';
 import { useSession } from './stores/session';
 
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', redirect: '/home' },
     { path: '/login', component: () => import('./views/LoginView.vue'), meta: { public: true } },
+    { path: '/plan', component: () => import('./views/PlanView.vue'), meta: { public: true } },
     { path: '/privacy', component: () => import('./views/PrivacyView.vue'), meta: { public: true } },
     { path: '/home', component: () => import('./views/HomeView.vue') },
     { path: '/first-login', component: () => import('./views/FirstLoginView.vue') },

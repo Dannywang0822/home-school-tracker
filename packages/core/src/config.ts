@@ -7,10 +7,15 @@ export interface AppConfig {
   wechatConfigured: boolean;
 }
 
-export function configFromEnv(env: NodeJS.ProcessEnv = process.env): AppConfig {
+export function configFromEnv(env: Record<string, string | undefined> = readProcessEnv()): AppConfig {
   return {
     invitePepper: env.INVITE_CODE_PEPPER ?? '',
     mailFrom: MAIL_FROM,
     wechatConfigured: Boolean(env.WECHAT_APPID && env.WECHAT_APPSECRET),
   };
+}
+
+function readProcessEnv(): Record<string, string | undefined> {
+  const runtime = globalThis as { process?: { env?: Record<string, string | undefined> } };
+  return runtime.process?.env ?? {};
 }

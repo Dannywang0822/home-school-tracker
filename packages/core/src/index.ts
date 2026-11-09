@@ -12,6 +12,6 @@ export { emitNotification } from './notify/emit.js';
 export { EmailOutboxAdapter } from './notify/email-outbox.js';
 export { WechatSubscribeAdapter } from './notify/wechat.js';
 export { evaluateDatabaseRead, evaluateDatabaseWrite, evaluateInvoke, evaluateStorage, bundledDatabaseRules, bundledFunctionRules, bundledStorageRules } from './rules/evaluate.js';
-export { hashInviteCode, hashDevPassword, weekBoundsShanghai, quietUntil, safeTemplateVars } from './util.js';
+export { hashInviteCode, hashDevPassword, sha256, weekBoundsShanghai, quietUntil, safeTemplateVars } from './util.js';
 export { MemoryObjectStorage, type ObjectStorage } from './storage/types.js';
 export { publishDueTasks, markOverdue } from './tasks/lifecycle.js';

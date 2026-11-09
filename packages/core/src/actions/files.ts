@@ -4,8 +4,7 @@ import { AppError } from '../app-error.js';
 import { registerAction } from '../auth/registry.js';
 import type { Repo } from '../repo.js';
 import { isSafeObjectPath } from '../storage/types.js';
-import { createHash } from 'node:crypto';
-import { asString, nid } from '../util.js';
+import { asString, nid, sha256Bytes } from '../util.js';
 
 const idSchema = z.string().min(1).max(80);
 const MAX_FILE = 20 * 1024 * 1024;
@@ -60,7 +59,7 @@ registerAction({
       name: input.name,
       mime: input.mime,
       size: input.size,
-      sha256: createHash('sha256').update(stored.body).digest('hex'),
+      sha256: sha256Bytes(stored.body),
       createdAt: ctx.clock.now(),
       createdBy: ctx.caller.userId,
       schemaVersion: 1,

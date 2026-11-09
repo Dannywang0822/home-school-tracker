@@ -31,13 +31,15 @@
               <van-button plain type="primary" native-type="button" :loading="sending" @click="onSend">{{ t('sendCode') }}</van-button>
               <van-button type="primary" native-type="submit" :loading="busy">{{ t('signIn') }}</van-button>
             </div>
-            <p v-if="sent" class="hint">{{ t('codeSent') }}</p>
+            <p v-if="demoCode" class="banner">{{ t('demoCode') }} {{ demoCode }}</p>
+            <p v-else-if="sent" class="hint">{{ t('codeSent') }}</p>
           </van-form>
         </van-tab>
       </van-tabs>
       <p v-if="error" class="error" role="alert">{{ error }}</p>
       <p class="hint"><router-link to="/privacy">{{ t('privacy') }}</router-link></p>
-      <div v-if="isDev" class="demo">
+      <p class="hint"><router-link to="/plan">{{ t('plan') }}</router-link></p>
+      <div v-if="showAccounts" class="demo">
         <p>{{ t('demoHint') }} DemoOnly-2026!</p>
         <ul>
           <li>p1@demo.school.local · {{ t('role.parent') }}</li>
@@ -70,7 +72,8 @@ const error = ref('');
 const busy = ref(false);
 const sending = ref(false);
 const sent = ref(false);
-const isDev = import.meta.env.DEV;
+const demoCode = ref('');
+const showAccounts = import.meta.env.DEV || import.meta.env.VITE_STATIC_DEMO === 'true';
 
 async function onPassword() {
   error.value = '';
@@ -94,6 +97,7 @@ async function onSend() {
     return;
   }
   sent.value = true;
+  demoCode.value = result.data.demoCode ?? '';
 }
 
 async function onCode() {

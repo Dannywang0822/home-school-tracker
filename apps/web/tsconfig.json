@@ -5,7 +5,9 @@
     "jsx": "preserve",
     "types": ["vite/client"],
     "paths": {
-      "@hst/shared": ["../../packages/shared/src/index.ts"]
+      "@hst/shared": ["../../packages/shared/src/index.ts"],
+      "@hst/core": ["../../packages/core/src/index.ts"],
+      "@hst/fixture": ["../../packages/fixture/src/index.ts"]
     },
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
