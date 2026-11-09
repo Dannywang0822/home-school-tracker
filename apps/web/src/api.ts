@@ -101,6 +101,18 @@ export function markPasswordChanged() {
   return callFunction<{ ok: boolean }>(FUNCTIONS.apiCore, 'auth.passwordChanged');
 }
 
+export async function setDevPassword(password: string) {
+  const response = await fetch('/api/dev/password', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      ...(getToken() ? { authorization: `Bearer ${getToken()}` } : {}),
+    },
+    body: JSON.stringify({ password }),
+  });
+  return (await response.json()) as ApiSuccess<{ updated: boolean }> | ApiFailure;
+}
+
 export function textOf(value: I18nText | string | null | undefined, locale: string): string {
   if (!value) return '';
   if (typeof value === 'string') return value;

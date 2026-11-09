@@ -19,7 +19,7 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { markPasswordChanged } from '../api';
+import { markPasswordChanged, setDevPassword } from '../api';
 import { useSession } from '../stores/session';
 
 const { t } = useI18n();
@@ -44,6 +44,12 @@ async function onSubmit() {
     return;
   }
   busy.value = true;
+  const savedPassword = await setDevPassword(password.value);
+  if (!savedPassword.ok) {
+    busy.value = false;
+    error.value = savedPassword.error.message;
+    return;
+  }
   const result = await markPasswordChanged();
   busy.value = false;
   if (!result.ok) {

@@ -99,7 +99,7 @@ export function createDispatcher(deps: DispatchDeps) {
           requestId: ctx.requestId,
           client: caller.client,
           studentId: idFrom(data, 'studentId'),
-          targetId: idFrom(data, 'guardianshipId') ?? idFrom(data, 'messageId'),
+          targetId: idFrom(data, 'guardianshipId') ?? idFrom(data, 'messageId') ?? idFrom(data, 'jobId') ?? idFrom(data, 'inviteId'),
           meta: { action: action.audit },
         });
       }
@@ -225,7 +225,7 @@ function failure(requestId: string, code: ErrorCode, locale: Locale, details?: R
 function publicDetails(error: AppError): Record<string, unknown> | undefined {
   if (!error.details) return undefined;
   const allowed: Record<string, unknown> = {};
-  for (const key of ['fields', 'studentIds', 'retryAfterSec', 'status'] as const) {
+  for (const key of ['fields', 'studentIds', 'retryAfterSec', 'status', 'jobId', 'total', 'errors'] as const) {
     if (key in error.details) allowed[key] = error.details[key];
   }
   return Object.keys(allowed).length > 0 ? allowed : undefined;

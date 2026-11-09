@@ -481,4 +481,90 @@ export class Repo {
     rows.sort((a, b) => (asNumber(b.effectiveAt) ?? 0) - (asNumber(a.effectiveAt) ?? 0));
     return rows[0] ?? null;
   }
+
+  async listSchool(collection: string, schoolId: string): Promise<Doc[]> {
+    return this.db.query(collection, (doc) => alive(doc) && doc.schoolId === schoolId);
+  }
+
+  async findUserByEmail(schoolId: string, email: string): Promise<Doc | null> {
+    const rows = await this.db.query(
+      COLLECTIONS.users,
+      (doc) => alive(doc) && doc.schoolId === schoolId && doc.email === email,
+    );
+    return rows[0] ?? null;
+  }
+
+  async findStudentByNo(schoolId: string, studentNo: string): Promise<Doc | null> {
+    const rows = await this.db.query(
+      COLLECTIONS.studentProfiles,
+      (doc) => alive(doc) && doc.schoolId === schoolId && doc.studentNo === studentNo,
+    );
+    return rows[0] ?? null;
+  }
+
+  async findYearByName(schoolId: string, name: string): Promise<Doc | null> {
+    const rows = await this.listSchool(COLLECTIONS.academicYears, schoolId);
+    return rows.find((doc) => doc.name === name) ?? null;
+  }
+
+  async findGrade(schoolId: string, programme: string, level: string): Promise<Doc | null> {
+    const rows = await this.listSchool(COLLECTIONS.grades, schoolId);
+    return rows.find((doc) => doc.programme === programme && doc.level === level) ?? null;
+  }
+
+  async findClassByName(schoolId: string, yearId: string, nameZh: string): Promise<Doc | null> {
+    const rows = await this.listSchool(COLLECTIONS.classes, schoolId);
+    return (
+      rows.find((doc) => {
+        if (doc.yearId !== yearId) return false;
+        const name = doc.name as { zh?: string } | undefined;
+        return name?.zh === nameZh;
+      }) ?? null
+    );
+  }
+
+  async findSubjectByCode(schoolId: string, code: string): Promise<Doc | null> {
+    const rows = await this.listSchool(COLLECTIONS.subjects, schoolId);
+    return rows.find((doc) => doc.code === code) ?? null;
+  }
+
+  async findCourseByName(schoolId: string, yearId: string, nameZh: string): Promise<Doc | null> {
+    const rows = await this.listSchool(COLLECTIONS.courses, schoolId);
+    return (
+      rows.find((doc) => {
+        if (doc.yearId !== yearId) return false;
+        const name = doc.name as { zh?: string } | undefined;
+        return name?.zh === nameZh;
+      }) ?? null
+    );
+  }
+
+  async listConsentsForStudent(studentId: string): Promise<Doc[]> {
+    const rows = await this.db.query(
+      COLLECTIONS.consents,
+      (doc) => alive(doc) && doc.subjectStudentId === studentId,
+    );
+    rows.sort((a, b) => (asNumber(b.grantedAt) ?? 0) - (asNumber(a.grantedAt) ?? 0));
+    return rows;
+  }
+
+  async queryAudit(filter: {
+    actorUserId?: string;
+    studentId?: string;
+    action?: string;
+    from?: number;
+    to?: number;
+  }): Promise<Doc[]> {
+    const rows = await this.db.query(COLLECTIONS.auditLogs, (doc) => {
+      if (filter.actorUserId && doc.actorUserId !== filter.actorUserId) return false;
+      if (filter.studentId && doc.studentId !== filter.studentId) return false;
+      if (filter.action && doc.action !== filter.action) return false;
+      const at = asNumber(doc.at) ?? 0;
+      if (filter.from != null && at < filter.from) return false;
+      if (filter.to != null && at > filter.to) return false;
+      return true;
+    });
+    rows.sort((a, b) => (asNumber(b.at) ?? 0) - (asNumber(a.at) ?? 0));
+    return rows;
+  }
 }

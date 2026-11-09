@@ -18,6 +18,7 @@ console.log(`Collections: ${Object.keys(rules).length}`);
 console.log('Storage prefixes: hst_tmp/ , hst_vault/');
 console.log('Cron expressions are 7-field. Confirm the trigger timezone in the console before enabling them.');
 console.log('Credentials are read from TENCENTCLOUD_SECRETID and TENCENTCLOUD_SECRETKEY. They are never printed.');
+console.log('User import stays local until those keys exist. It does not call CloudBase CreateUser.');
 
 if (!apply) {
   console.log('Dry run only. Re-run with --apply --i-know-this-env-is-shared after TCB_ENV_ID and CAM keys are set.');

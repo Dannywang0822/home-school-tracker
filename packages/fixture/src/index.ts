@@ -1,6 +1,5 @@
-import { createHash } from 'node:crypto';
 import { COLLECTIONS } from '@hst/shared';
-import { MemoryStore, hashInviteCode, type Doc } from '@hst/core';
+import { MemoryStore, hashDevPassword, hashInviteCode, type Doc } from '@hst/core';
 
 export const NOW = Date.parse('2026-11-09T02:00:00.000Z');
 export const PEPPER = 'test-pepper';
@@ -175,6 +174,7 @@ export async function createFixture(): Promise<Fixture> {
     programme: 'DP',
     name: { zh: 'DP1 物理', en: 'DP1 Physics' },
     homeroomClassId: ids.classDp,
+    leakMarker: 'cny_dp_course',
   });
 
   const people: Array<{ id: string; roles: string[]; email: string; zh: string; en: string; uid: string; status?: string }> = [
@@ -691,12 +691,21 @@ export async function createFixture(): Promise<Fixture> {
     requiresReconsent: false,
     schoolId: ids.school,
   });
+  await put(COLLECTIONS.consentPolicies, {
+    _id: 'pol_guardian',
+    version: '2026-11-v1',
+    kind: 'guardian_minor',
+    content: { zh: '未满 14 岁学生的监护人同意书（演示文本）。', en: 'Guardian consent for students under 14 (demo text).' },
+    effectiveAt: now,
+    requiresReconsent: false,
+    schoolId: ids.school,
+  });
 
   return { db, now, pepper: PEPPER };
 }
 
 export function devPasswordHash(password: string): string {
-  return createHash('sha256').update(`hst-dev-only:${password}`).digest('hex');
+  return hashDevPassword(password);
 }
 
 export function verifyDevPassword(email: string, password: string): { uid: string; userId: string } | null {

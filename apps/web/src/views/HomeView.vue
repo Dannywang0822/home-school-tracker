@@ -33,6 +33,7 @@
         </van-cell-group>
         <p v-else class="note">{{ t('noChildren') }}</p>
         <p class="note">{{ t('weekNote') }}</p>
+        <p v-if="session.me?.user.roles.includes('admin')" class="hint"><router-link to="/a">{{ t('admin') }}</router-link></p>
         <p class="hint"><router-link to="/privacy">{{ t('privacy') }}</router-link></p>
       </section>
     </div>

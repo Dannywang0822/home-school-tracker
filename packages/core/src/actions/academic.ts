@@ -1,4 +1,4 @@
-import { FUNCTIONS } from '@hst/shared';
+import { COLLECTIONS, FUNCTIONS } from '@hst/shared';
 import { z } from 'zod';
 import { AppError } from '../app-error.js';
 import {
@@ -205,6 +205,60 @@ registerAction({
         })),
       },
     };
+  },
+});
+
+registerAction({
+  name: 'course.listMine',
+  fn: FUNCTIONS.apiAcademic,
+  roles: ['teacher', 'student', 'parent'],
+  input: z.object({ studentId: idSchema.optional(), yearId: idSchema.optional() }).strip(),
+  scope: async (ctx, input) => {
+    if (ctx.caller.roles.includes('parent')) {
+      if (!input.studentId) return false;
+      return (await activeChildIds(ctx)).includes(input.studentId);
+    }
+    if (ctx.caller.roles.includes('student')) {
+      const self = await ctx.repo.findStudentByUserId(ctx.caller.userId);
+      if (!self) return false;
+      if (input.studentId && input.studentId !== self._id) return false;
+      return true;
+    }
+    if (input.studentId) return ctx.repo.teachesStudent(ctx.caller.userId, input.studentId, ctx.caller.schoolId, ctx.clock.now());
+    return true;
+  },
+  async handler(ctx, input) {
+    const courses = await ctx.repo.listSchool(COLLECTIONS.courses, ctx.caller.schoolId);
+    let allowed = new Set<string>();
+    if (ctx.caller.roles.includes('teacher') && !input.studentId) {
+      allowed = new Set(await ctx.repo.courseIdsForTeacher(ctx.caller.userId, ctx.caller.schoolId, ctx.clock.now()));
+    } else {
+      const studentId = input.studentId ?? (await ctx.repo.findStudentByUserId(ctx.caller.userId))?._id;
+      if (!studentId) return { items: [] };
+      const enrolled = await ctx.repo.db.query(
+        COLLECTIONS.enrollments,
+        (doc) => doc.studentId === studentId && doc.schoolId === ctx.caller.schoolId && doc.status === 'active',
+      );
+      allowed = new Set(enrolled.map((doc) => asString(doc.courseId) ?? '').filter(Boolean));
+      if (ctx.caller.roles.includes('teacher')) {
+        const taught = new Set(await ctx.repo.courseIdsForTeacher(ctx.caller.userId, ctx.caller.schoolId, ctx.clock.now()));
+        allowed = new Set([...allowed].filter((courseId) => taught.has(courseId)));
+      }
+    }
+    const items = [];
+    for (const course of courses) {
+      if (!allowed.has(course._id)) continue;
+      if (input.yearId && course.yearId !== input.yearId) continue;
+      const subject = await ctx.repo.db.get(COLLECTIONS.subjects, asString(course.subjectId) ?? '');
+      items.push({
+        courseId: course._id,
+        name: course.name,
+        subject: subject?.name,
+        programme: course.programme,
+        gradeLevel: course.gradeId,
+      });
+    }
+    return { items };
   },
 });
 
