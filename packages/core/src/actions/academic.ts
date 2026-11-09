@@ -406,12 +406,7 @@ registerAction({
   fn: FUNCTIONS.apiCore,
   roles: ['teacher', 'student', 'parent', 'admin'],
   input: z.object({ fileId: idSchema }).strip(),
-  scope: async (ctx, input) => {
-    const file = await ctx.repo.getFile(input.fileId);
-    const studentId = asString(file?.studentId);
-    if (!file || file.schoolId !== ctx.caller.schoolId || !studentId) return false;
-    return canReadStudentAcademic(ctx, studentId);
-  },
+  scope: async (ctx, input) => canReadFile(ctx, input.fileId),
   async handler(ctx, input) {
     const expiresAt = ctx.clock.now() + 600_000;
     const token = sha256(`${input.fileId}:${expiresAt}:${ctx.config.invitePepper || 'local'}`).slice(0, 32);
@@ -431,7 +426,7 @@ registerAction({
       });
     }
     return {
-      url: `https://local.invalid/hst-download/${input.fileId}?e=${expiresAt}&t=${token}`,
+      url: `/api/dev/files/${input.fileId}?e=${expiresAt}&t=${token}`,
       expiresAt,
     };
   },
@@ -480,6 +475,22 @@ async function studentForTask(ctx: ActionContext, requested: string | undefined,
     return assigned.length === 1 ? (assigned[0] ?? null) : null;
   }
   return null;
+}
+
+async function canReadFile(ctx: ActionContext, fileId: string): Promise<boolean> {
+  const file = await ctx.repo.getFile(fileId);
+  if (!file || file.schoolId !== ctx.caller.schoolId) return false;
+  const studentId = asString(file.studentId);
+  if (studentId) return canReadStudentAcademic(ctx, studentId);
+  if (file.refType !== 'task') return false;
+  const task = await ctx.repo.getTask(asString(file.refId) ?? '');
+  const courseId = asString(task?.courseId);
+  if (!task || task.schoolId !== ctx.caller.schoolId || !courseId) return false;
+  if (ctx.caller.roles.includes('admin')) return true;
+  if (ctx.caller.roles.includes('teacher')) return ctx.repo.teachesCourse(ctx.caller.userId, courseId, ctx.caller.schoolId, ctx.clock.now());
+  const owner = await studentForTask(ctx, undefined, task._id);
+  if (!owner) return false;
+  return Boolean(await ctx.repo.progressFor(task._id, owner));
 }
 
 async function canAccessThread(ctx: ActionContext, thread: Doc): Promise<boolean> {

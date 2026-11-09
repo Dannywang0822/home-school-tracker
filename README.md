@@ -30,4 +30,4 @@ node scripts/deploy.mjs
 
 ## 还没有做的事
 
-任务发布、批改、CAS 和 EE 还没做。用户导入不会调用腾讯云 CreateUser，等 CAM 密钥到位后再接。云函数在设置 `HST_DATA_BACKEND=cloudbase` 之前会拒绝访问。
+批改、CAS 和 EE 还没做。任务提醒本周只计算逾期，不发通知。用户导入不会调用腾讯云 CreateUser。云函数在设置 `HST_DATA_BACKEND=cloudbase` 之前会拒绝访问。

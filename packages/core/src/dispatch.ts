@@ -14,6 +14,7 @@ import { getAction } from './auth/registry.js';
 import type { Clock } from './clock.js';
 import type { AppConfig } from './config.js';
 import type { DocStore } from './db/types.js';
+import { MemoryObjectStorage, type ObjectStorage } from './storage/types.js';
 import { Repo } from './repo.js';
 import { asString, newRequestId } from './util.js';
 import './actions/load.js';
@@ -24,6 +25,7 @@ export interface DispatchDeps {
   db: DocStore;
   clock: Clock;
   config: AppConfig;
+  storage?: ObjectStorage;
 }
 
 export function createDispatcher(deps: DispatchDeps) {
@@ -76,6 +78,7 @@ export function createDispatcher(deps: DispatchDeps) {
         locale: requestLocale,
         functionName,
         config: deps.config,
+        storage: deps.storage ?? new MemoryObjectStorage(),
       };
       if (action.idempotent && parsed.data.requestId && caller) {
         const cached = await repo.getIdempotent(`${caller.userId}:${parsed.data.requestId}`, deps.clock.now());
