@@ -1,0 +1,5 @@
+{
+  "name": "hst_cron_outbox_maintain",
+  "private": true,
+  "version": "0.1.0"
+}

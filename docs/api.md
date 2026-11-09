@@ -1,5 +1,7 @@
 # API 文档（云函数 / HTTP API）
 
+> **物理名**：云函数名使用 `hst_` 前缀，例如 `api-core` 的部署名是 `hst_api_core`。请求里的 `action` 不变。见 [naming.md](naming.md)。第 1 周补了只读 action `thread.get` 和 `rppf.get`，避免安全测试为了读取而调用会写数据的接口。
+
 > Web 端和以后的小程序**共用同一组云函数**。新增小程序时只需要写前端，加上调用 `auth.wechat*` 接口，业务后端不用改。
 > 所有业务权限都在云函数内部校验（见 `security-rules.md` §3）。
 

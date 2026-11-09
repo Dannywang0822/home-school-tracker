@@ -1,0 +1,13 @@
+{
+  "hst_auth_public": { "invoke": true },
+  "hst_api_core": { "invoke": "auth.loginType != 'ANONYMOUS' && auth != null" },
+  "hst_api_academic": { "invoke": "auth.loginType != 'ANONYMOUS' && auth != null" },
+  "hst_api_ib": { "invoke": "auth.loginType != 'ANONYMOUS' && auth != null" },
+  "hst_api_admin": { "invoke": "auth.loginType != 'ANONYMOUS' && auth != null" },
+  "hst_ops": { "invoke": "auth.loginType != 'ANONYMOUS' && auth != null" },
+  "hst_cron_publish": { "invoke": false },
+  "hst_cron_reminders": { "invoke": false },
+  "hst_cron_weekly_digest": { "invoke": false },
+  "hst_cron_retention": { "invoke": false },
+  "hst_cron_outbox_maintain": { "invoke": false }
+}

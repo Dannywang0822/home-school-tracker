@@ -1,0 +1,23 @@
+import { createPinia } from 'pinia';
+import { createApp } from 'vue';
+import { Button, Cell, CellGroup, Field, Form, NavBar, Tab, Tabs, Tag } from 'vant';
+import 'vant/lib/index.css';
+import App from './App.vue';
+import { i18n } from './i18n';
+import router from './router';
+import './styles.css';
+
+const app = createApp(App);
+app.use(createPinia());
+app.use(router);
+app.use(i18n);
+app.use(Button);
+app.use(Cell);
+app.use(CellGroup);
+app.use(Field);
+app.use(Form);
+app.use(NavBar);
+app.use(Tab);
+app.use(Tabs);
+app.use(Tag);
+app.mount('#app');

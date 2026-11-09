@@ -1,0 +1,38 @@
+{
+  "hst_users": [
+    { "name": "school_email", "keys": [{ "schoolId": 1 }, { "email": 1 }], "unique": true },
+    { "name": "school_roles", "keys": [{ "schoolId": 1 }, { "roles": 1 }] }
+  ],
+  "hst_auth_identities": [
+    { "name": "provider_key", "keys": [{ "provider": 1 }, { "appId": 1 }, { "key": 1 }], "unique": true },
+    { "name": "user", "keys": [{ "userId": 1 }] }
+  ],
+  "hst_student_profiles": [
+    { "name": "user", "keys": [{ "userId": 1 }], "unique": true },
+    { "name": "school_no", "keys": [{ "schoolId": 1 }, { "studentNo": 1 }], "unique": true }
+  ],
+  "hst_guardianships": [
+    { "name": "parent_status", "keys": [{ "parentId": 1 }, { "status": 1 }] },
+    { "name": "parent_student", "keys": [{ "parentId": 1 }, { "studentId": 1 }], "unique": true }
+  ],
+  "hst_teaching_assignments": [
+    { "name": "teacher_course", "keys": [{ "teacherId": 1 }, { "courseId": 1 }], "unique": true }
+  ],
+  "hst_enrollments": [
+    { "name": "student_course", "keys": [{ "studentId": 1 }, { "courseId": 1 }], "unique": true }
+  ],
+  "hst_notifications": [
+    { "name": "auth_uid_created", "keys": [{ "recipientAuthUid": 1 }, { "createdAt": -1 }] },
+    { "name": "dedupe", "keys": [{ "dedupeKey": 1 }], "unique": true }
+  ],
+  "hst_outbox": [
+    { "name": "claim", "keys": [{ "status": 1 }, { "scheduledAt": 1 }, { "priority": 1 }] },
+    { "name": "dedupe", "keys": [{ "dedupeKey": 1 }], "unique": true }
+  ],
+  "hst_invite_codes": [
+    { "name": "code_hash", "keys": [{ "codeHash": 1 }], "unique": true }
+  ],
+  "hst_audit_logs": [
+    { "name": "actor_time", "keys": [{ "actorUserId": 1 }, { "at": -1 }] }
+  ]
+}

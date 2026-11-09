@@ -1,0 +1,34 @@
+{
+  "name": "home-school-tracker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "server"
+  ],
+  "scripts": {
+    "dev": "DEV_AUTH=1 concurrently -k -n api,web -c blue,green \"npm run dev -w @hst/dev-server\" \"npm run dev -w @hst/web\"",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit && npm run typecheck -w @hst/web",
+    "lint": "eslint .",
+    "build:functions": "node scripts/build-functions.mjs",
+    "deploy": "node scripts/deploy.mjs",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build:functions"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^22.19.1",
+    "concurrently": "^9.2.1",
+    "esbuild": "^0.25.12",
+    "eslint": "^9.39.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.3",
+    "tsx": "^4.20.6",
+    "vitest": "^3.2.4"
+  }
+}
