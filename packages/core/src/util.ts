@@ -8,6 +8,23 @@ export function hashInviteCode(code: string, pepper: string): string {
   return sha256(`${code}${pepper}`);
 }
 
+/** Local demo login only. Production passwords stay in CloudBase, not in this database. */
+export function hashDevPassword(password: string): string {
+  return sha256(`hst-dev-only:${password}`);
+}
+
+export function randomSecret(length = 8): string {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const bytes = randomBytes(length);
+  let out = '';
+  for (let i = 0; i < length; i += 1) out += alphabet[(bytes[i] ?? 0) % alphabet.length];
+  return out;
+}
+
+export function randomTempPassword(): string {
+  return `Tmp-${randomSecret(4)}-${randomSecret(4)}-9`;
+}
+
 export function nid(prefix: string, size = 12): string {
   return `${prefix}${randomBytes(size).toString('hex').slice(0, size)}`;
 }
