@@ -88,6 +88,8 @@ export function projectTask(doc: Doc): Record<string, unknown> {
     dueAt: doc.dueAt,
     status: doc.status,
     type: doc.type,
+    requiresSubmission: doc.requiresSubmission !== false,
+    allowLate: doc.allowLate === true,
     courseId: doc.courseId,
     subjectId: doc.subjectId,
     programme: doc.programme,

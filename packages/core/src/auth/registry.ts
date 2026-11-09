@@ -4,6 +4,7 @@ import type { Caller } from './caller.js';
 import type { Repo } from '../repo.js';
 import type { Clock } from '../clock.js';
 import type { AppConfig } from '../config.js';
+import type { ObjectStorage } from '../storage/types.js';
 
 export interface ActionContext {
   caller: Caller;
@@ -13,6 +14,7 @@ export interface ActionContext {
   locale: 'zh' | 'en';
   functionName: string;
   config: AppConfig;
+  storage: ObjectStorage;
 }
 
 export interface ActionDefinition<I, O> {

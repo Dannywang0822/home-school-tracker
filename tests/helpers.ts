@@ -1,20 +1,23 @@
 import { randomUUID } from 'node:crypto';
-import { createDispatcher, frozenClock, getAction, type AuthContext } from '@hst/core';
+import { MemoryObjectStorage, createDispatcher, frozenClock, getAction, type AuthContext, type ObjectStorage } from '@hst/core';
 import { MAIL_FROM, type ApiResult } from '@hst/shared';
 import { createFixture, PEPPER, type Fixture } from '@hst/fixture';
 
 export interface Harness extends Fixture {
   dispatch: ReturnType<typeof createDispatcher>;
+  storage: ObjectStorage;
 }
 
 export async function harness(): Promise<Harness> {
   const fixture = await createFixture();
+  const storage = new MemoryObjectStorage();
   const dispatch = createDispatcher({
     db: fixture.db,
     clock: frozenClock(fixture.now),
+    storage,
     config: { invitePepper: PEPPER, mailFrom: MAIL_FROM, wechatConfigured: false },
   });
-  return { ...fixture, dispatch };
+  return { ...fixture, dispatch, storage };
 }
 
 export function session(uid: string, extra: Partial<AuthContext> = {}): AuthContext {

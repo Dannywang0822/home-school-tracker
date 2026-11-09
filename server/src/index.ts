@@ -1,7 +1,8 @@
 import { randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { COLLECTIONS, ERROR_HTTP_STATUS, GATEWAY_FUNCTIONS } from '@hst/shared';
-import { createDispatcher, frozenClock, hashDevPassword, normalizeEvent } from '@hst/core';
+import { createHash } from 'node:crypto';
+import { MemoryObjectStorage, createDispatcher, frozenClock, hashDevPassword, normalizeEvent } from '@hst/core';
 import { DEV_DEMO_PASSWORD, NOW, PEPPER, createFixture, verifyDevPassword } from '@hst/fixture';
 
 if (process.env.DEV_AUTH !== '1') {
@@ -11,9 +12,11 @@ if (process.env.DEV_AUTH !== '1') {
 
 const port = Number(process.env.DEV_API_PORT ?? 8787);
 const fixture = await createFixture();
+const storage = new MemoryObjectStorage();
 const dispatch = createDispatcher({
   db: fixture.db,
   clock: frozenClock(fixture.now),
+  storage,
   config: {
     invitePepper: process.env.INVITE_CODE_PEPPER || PEPPER,
     mailFrom: 'dannysuperbot@mail.grokbot.com',
@@ -60,6 +63,35 @@ function same(left: string, right: string): boolean {
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', 'http://127.0.0.1');
   try {
+    if (req.method === 'GET' && url.pathname.startsWith('/api/dev/files/')) {
+      const fileId = decodeURIComponent(url.pathname.slice('/api/dev/files/'.length));
+      const expires = Number(url.searchParams.get('e'));
+      const token = url.searchParams.get('t') ?? '';
+      const pepper = process.env.INVITE_CODE_PEPPER || PEPPER;
+      const expected = createHash('sha256').update(`${fileId}:${expires}:${pepper}`).digest('hex').slice(0, 32);
+      if (!fileId || !Number.isFinite(expires) || expires <= NOW || token !== expected) {
+        send(res, 403, { ok: false, error: { code: 'PERMISSION_DENIED', message: '链接无效' } });
+        return;
+      }
+      const file = await fixture.db.get('hst_files', fileId);
+      const path = typeof file?.cloudFileId === 'string' ? file.cloudFileId : '';
+      if (!file || file.deletedAt != null || !path.startsWith('hst_vault/')) {
+        send(res, 404, { ok: false, error: { code: 'NOT_FOUND', message: '资源不存在' } });
+        return;
+      }
+      const object = await storage.get(path);
+      if (!object) {
+        send(res, 404, { ok: false, error: { code: 'NOT_FOUND', message: '资源不存在' } });
+        return;
+      }
+      res.writeHead(200, {
+        'content-type': object.mime || 'application/octet-stream',
+        'content-disposition': `attachment; filename="${encodeURIComponent(String(file.name ?? 'file'))}"`,
+        'cache-control': 'no-store',
+      });
+      res.end(object.body);
+      return;
+    }
     if (req.method === 'GET' && url.pathname === '/api/health') {
       send(res, 200, { ok: true, service: 'hst-dev', auth: 'local', now: NOW });
       return;
@@ -74,6 +106,26 @@ const server = createServer(async (req, res) => {
       return;
     }
     const record = body as Record<string, unknown>;
+
+    if (url.pathname === '/api/dev/upload') {
+      const session = sessions.get(tokenFrom(req));
+      const name = typeof record.name === 'string' ? record.name.slice(0, 180) : '';
+      const mime = typeof record.mime === 'string' ? record.mime : '';
+      const dataBase64 = typeof record.dataBase64 === 'string' ? record.dataBase64 : '';
+      if (!session || !name || !mime || !dataBase64) {
+        send(res, 400, { ok: false, error: { code: 'INVALID_ARGUMENT', message: '参数不正确' } });
+        return;
+      }
+      const body = Buffer.from(dataBase64, 'base64');
+      if (body.byteLength === 0 || body.byteLength > 20 * 1024 * 1024) {
+        send(res, 400, { ok: false, error: { code: 'FILE_TOO_LARGE', message: '文件太大' } });
+        return;
+      }
+      const tmp = `hst_tmp/20261109/${randomBytes(8).toString('hex')}`;
+      await storage.put(tmp, { body, mime });
+      send(res, 200, { ok: true, data: { tmpCloudFileId: tmp, size: body.byteLength } });
+      return;
+    }
 
     if (url.pathname === '/api/dev/login') {
       const email = typeof record.email === 'string' ? record.email.trim().toLowerCase() : '';

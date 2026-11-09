@@ -15,6 +15,13 @@ const router = createRouter({
     { path: '/a/relations', component: () => import('./views/admin/RelationsView.vue'), meta: { admin: true } },
     { path: '/a/invites', component: () => import('./views/admin/InvitesView.vue'), meta: { admin: true } },
     { path: '/a/consents', component: () => import('./views/admin/ConsentReportView.vue'), meta: { admin: true } },
+    { path: '/t/tasks', component: () => import('./views/tasks/TeacherTasks.vue'), meta: { role: 'teacher' } },
+    { path: '/t/tasks/new', component: () => import('./views/tasks/TeacherTaskNew.vue'), meta: { role: 'teacher' } },
+    { path: '/t/tasks/:taskId', component: () => import('./views/tasks/TeacherTaskDetail.vue'), meta: { role: 'teacher' } },
+    { path: '/s/tasks', component: () => import('./views/tasks/StudentTasks.vue'), meta: { role: 'student' } },
+    { path: '/s/tasks/:taskId', component: () => import('./views/tasks/StudentTaskDetail.vue'), meta: { role: 'student' } },
+    { path: '/p/tasks', component: () => import('./views/tasks/ParentTasks.vue'), meta: { role: 'parent' } },
+    { path: '/p/tasks/:taskId', component: () => import('./views/tasks/ParentTaskDetail.vue'), meta: { role: 'parent' } },
   ],
 });
 
@@ -35,6 +42,10 @@ router.beforeEach(async (to) => {
     return { path: '/consent' };
   }
   if (to.meta.admin && !session.me?.user.roles.includes('admin')) {
+    return { path: '/home' };
+  }
+  const role = typeof to.meta.role === 'string' ? to.meta.role : '';
+  if (role && !session.me?.user.roles.includes(role)) {
     return { path: '/home' };
   }
   return true;
