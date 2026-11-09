@@ -1,0 +1,14 @@
+{
+  "name": "@hst/dev-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@hst/core": "0.1.0",
+    "@hst/fixture": "0.1.0",
+    "@hst/shared": "0.1.0"
+  }
+}

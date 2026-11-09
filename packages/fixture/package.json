@@ -1,0 +1,13 @@
+{
+  "name": "@hst/fixture",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@hst/core": "0.1.0",
+    "@hst/shared": "0.1.0"
+  }
+}

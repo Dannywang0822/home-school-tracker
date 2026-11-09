@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "note": "HTTP API may call only these functions. Database and storage stay closed. Cron functions are timer-only.",
+  "allow": [
+    "functions:/hst_auth_public",
+    "functions:/hst_api_core",
+    "functions:/hst_api_academic",
+    "functions:/hst_api_ib",
+    "functions:/hst_api_admin",
+    "functions:/hst_ops"
+  ]
+}

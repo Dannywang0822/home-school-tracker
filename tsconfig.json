@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "types": ["node"],
+    "paths": {
+      "@hst/shared": ["packages/shared/src/index.ts"],
+      "@hst/core": ["packages/core/src/index.ts"],
+      "@hst/fixture": ["packages/fixture/src/index.ts"]
+    }
+  },
+  "include": [
+    "packages/**/*.ts",
+    "server/**/*.ts",
+    "tests/**/*.ts",
+    "functions/**/*.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": ["**/dist/**", "**/node_modules/**", "apps/web/**"]
+}

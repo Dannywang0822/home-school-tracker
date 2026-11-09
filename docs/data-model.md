@@ -1,5 +1,7 @@
 # 数据模型（CloudBase 文档型云数据库）
 
+> **物理名**：本文的集合名是逻辑名。共享环境中的实际集合名是 `hst_` + 逻辑名，见 [naming.md](naming.md)。
+
 > 依据 `../prompt.md`，默认假设见 `assumptions.md`。
 > 数据库：CloudBase **文档型数据库**（类 MongoDB，传统模式），不使用 PG/MySQL 模式。
 

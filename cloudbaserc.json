@@ -1,0 +1,17 @@
+{
+  "envId": "__SET_VIA_TCB_ENV_ID__",
+  "functionRoot": "./functions",
+  "functions": [
+    { "name": "hst_auth_public", "handler": "index.main", "runtime": "Nodejs18.15", "timeout": 20, "memorySize": 256 },
+    { "name": "hst_api_core", "handler": "index.main", "runtime": "Nodejs18.15", "timeout": 20, "memorySize": 256 },
+    { "name": "hst_api_academic", "handler": "index.main", "runtime": "Nodejs18.15", "timeout": 20, "memorySize": 256 },
+    { "name": "hst_api_ib", "handler": "index.main", "runtime": "Nodejs18.15", "timeout": 20, "memorySize": 256 },
+    { "name": "hst_api_admin", "handler": "index.main", "runtime": "Nodejs18.15", "timeout": 20, "memorySize": 256 },
+    { "name": "hst_ops", "handler": "index.main", "runtime": "Nodejs18.15", "timeout": 20, "memorySize": 256 },
+    { "name": "hst_cron_publish", "handler": "index.main", "runtime": "Nodejs18.15", "timeout": 60, "memorySize": 256, "triggers": [{ "name": "publish", "type": "timer", "config": "0 * * * * * *" }] },
+    { "name": "hst_cron_reminders", "handler": "index.main", "runtime": "Nodejs18.15", "timeout": 60, "memorySize": 256, "triggers": [{ "name": "reminders", "type": "timer", "config": "0 5 * * * * *" }] },
+    { "name": "hst_cron_weekly_digest", "handler": "index.main", "runtime": "Nodejs18.15", "timeout": 60, "memorySize": 256, "triggers": [{ "name": "digest", "type": "timer", "config": "0 0 18 * * * *" }] },
+    { "name": "hst_cron_retention", "handler": "index.main", "runtime": "Nodejs18.15", "timeout": 60, "memorySize": 256, "triggers": [{ "name": "retention", "type": "timer", "config": "0 0 3 * * * *" }] },
+    { "name": "hst_cron_outbox_maintain", "handler": "index.main", "runtime": "Nodejs18.15", "timeout": 60, "memorySize": 256, "triggers": [{ "name": "outbox", "type": "timer", "config": "0 */5 * * * * *" }] }
+  ]
+}

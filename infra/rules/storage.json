@@ -1,0 +1,4 @@
+{
+  "read": false,
+  "write": "auth != null && auth.loginType != 'ANONYMOUS' && /^hst_tmp\\//.test(resource.path)"
+}
