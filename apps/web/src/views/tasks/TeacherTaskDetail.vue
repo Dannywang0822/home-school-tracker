@@ -7,7 +7,14 @@
       <p>{{ task?.description }}</p>
       <h2>{{ t('completion') }}</h2>
       <van-cell-group inset>
-        <van-cell v-for="item in items" :key="String(item.studentId)" :title="textOf(item.displayName, locale)" :label="String(item.displayStatus)" />
+        <van-cell
+          v-for="item in items"
+          :key="String(item.studentId)"
+          :title="textOf(item.displayName, locale)"
+          :label="`${item.displayStatus} · ${item.assessmentStatus ?? ''}`"
+          is-link
+          :to="`/t/tasks/${taskId}/grade/${item.studentId}`"
+        />
       </van-cell-group>
       <p v-if="error" class="error">{{ error }}</p>
     </section>
@@ -24,12 +31,12 @@ import { formatDue } from './format';
 
 const { t, locale } = useI18n();
 const route = useRoute();
+const taskId = String(route.params.taskId);
 const task = ref<{ title: string; description: string; dueAt: number } | null>(null);
-const items = ref<Array<{ studentId: string; displayName: I18nText; displayStatus: string }>>([]);
+const items = ref<Array<{ studentId: string; displayName: I18nText; displayStatus: string; assessmentStatus?: string }>>([]);
 const error = ref('');
 
 onMounted(async () => {
-  const taskId = String(route.params.taskId);
   const detail = await callFunction<{ task: { title: string; description: string; dueAt: number } }>(FUNCTIONS.apiAcademic, 'task.get', { taskId });
   if (!detail.ok) error.value = detail.error.message;
   else task.value = detail.data.task;

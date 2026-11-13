@@ -1,5 +1,5 @@
 import { COLLECTIONS } from '@hst/shared';
-import { MemoryStore, hashDevPassword, hashInviteCode, type Doc } from '@hst/core';
+import { MemoryStore, Repo, ensureAssessmentCatalog, hashDevPassword, hashInviteCode, recomputeTermSummary, type Doc } from '@hst/core';
 
 export const NOW = Date.parse('2026-11-09T02:00:00.000Z');
 export const PEPPER = 'test-pepper';
@@ -8,7 +8,9 @@ export const DEV_DEMO_PASSWORD = 'DemoOnly-2026!';
 export const ids = {
   school: 'sch_demo',
   year: 'year_2026',
+  yearPrev: 'year_2025',
   term: 'term_2026_1',
+  termPrev: 'term_2025_2',
   classMyp: 'cls_myp4a',
   classDp: 'cls_dp1a',
   subjectSci: 'sub_sci',
@@ -41,6 +43,7 @@ export const ids = {
   taskS2Only: 'tsk_s2_only',
   taskS1Released: 'tsk_s1_released',
   taskS1Draft: 'tsk_s1_draft',
+  taskS1Prior: 'tsk_s1_prior',
   taskS3: 'tsk_s3',
   threadS1: 'thr_s1',
   threadS2: 'thr_s2',
@@ -74,6 +77,27 @@ export const canary = {
 } as const;
 
 export const foreignMarkers = Object.values(canary);
+
+/** Seed accounts. Demo login is derived from this list, not a second allowlist. */
+export const demoAccounts = [
+  { id: ids.uS1, roles: ['student'], email: 's1@demo.school.local', zh: '演示学生一', en: 'Demo Student One', uid: 'uid_s1' },
+  { id: ids.uS2, roles: ['student'], email: 's2@demo.school.local', zh: canary.s2Name, en: 'Demo Student Two', uid: 'uid_s2' },
+  { id: ids.uS3, roles: ['student'], email: 's3@demo.school.local', zh: '演示学生三', en: 'Demo Student Three', uid: 'uid_s3' },
+  { id: ids.uS4, roles: ['student'], email: 's4@demo.school.local', zh: '演示学生四', en: 'Demo Student Four', uid: 'uid_s4' },
+  { id: ids.uMinor, roles: ['student'], email: 'minor@demo.school.local', zh: '演示未同意', en: 'Demo Minor', uid: 'uid_minor', status: 'pending_consent' },
+  { id: ids.p1, roles: ['parent'], email: 'p1@demo.school.local', zh: '演示家长一', en: 'Demo Parent One', uid: 'uid_p1' },
+  { id: ids.p2, roles: ['parent'], email: canary.p2Email, zh: '演示家长二', en: 'Demo Parent Two', uid: 'uid_p2' },
+  { id: ids.p3, roles: ['parent'], email: 'p3@demo.school.local', zh: '演示家长三', en: 'Demo Parent Three', uid: 'uid_p3' },
+  { id: ids.p4, roles: ['parent'], email: 'p4@demo.school.local', zh: '演示家长四', en: 'Demo Parent Four', uid: 'uid_p4' },
+  { id: ids.p5, roles: ['parent'], email: 'p5@demo.school.local', zh: '演示家长五', en: 'Demo Parent Five', uid: 'uid_p5' },
+  { id: ids.t1, roles: ['teacher'], email: 't1@demo.school.local', zh: '演示老师一', en: 'Demo Teacher One', uid: 'uid_t1' },
+  { id: ids.t2, roles: ['teacher'], email: 't2@demo.school.local', zh: '演示老师二', en: 'Demo Teacher Two', uid: 'uid_t2' },
+  { id: ids.t3, roles: ['teacher'], email: 't3@demo.school.local', zh: '演示老师三', en: 'Demo Teacher Three', uid: 'uid_t3' },
+  { id: ids.sv1, roles: ['supervisor'], email: 'sv1@demo.school.local', zh: '演示导师', en: 'Demo Supervisor', uid: 'uid_sv1' },
+  { id: ids.cc1, roles: ['cas_coordinator'], email: 'cc1@demo.school.local', zh: '演示协调员', en: 'Demo Coordinator', uid: 'uid_cc1' },
+  { id: ids.a1, roles: ['admin'], email: 'a1@demo.school.local', zh: '演示管理员', en: 'Demo Admin', uid: 'uid_a1' },
+  { id: ids.ops1, roles: ['ops_mailer'], email: 'ops@demo.school.local', zh: '发件机器人', en: 'Mail Bot', uid: 'uid_ops' },
+] as const;
 
 const DUE_SHARED = Date.parse('2026-11-11T07:00:00.000Z');
 const DUE_S2 = Date.parse('2026-11-10T07:00:00.000Z');
@@ -116,6 +140,15 @@ export async function createFixture(): Promise<Fixture> {
     isCurrent: true,
     status: 'active',
   });
+  await put(COLLECTIONS.academicYears, {
+    ...stamp(ids.a1),
+    _id: ids.yearPrev,
+    name: '2025-2026',
+    startDate: Date.parse('2025-08-01T00:00:00+08:00'),
+    endDate: Date.parse('2026-07-01T00:00:00+08:00'),
+    isCurrent: false,
+    status: 'archived',
+  });
   await put(COLLECTIONS.terms, {
     ...stamp(ids.a1),
     _id: ids.term,
@@ -124,6 +157,15 @@ export async function createFixture(): Promise<Fixture> {
     name: { zh: '第一学期', en: 'Term 1' },
     startDate: Date.parse('2026-08-01T00:00:00+08:00'),
     endDate: Date.parse('2027-01-15T00:00:00+08:00'),
+  });
+  await put(COLLECTIONS.terms, {
+    ...stamp(ids.a1),
+    _id: ids.termPrev,
+    yearId: ids.yearPrev,
+    index: 2,
+    name: { zh: '上学年第二学期', en: 'Previous term 2' },
+    startDate: Date.parse('2026-02-01T00:00:00+08:00'),
+    endDate: Date.parse('2026-06-30T00:00:00+08:00'),
   });
   await put(COLLECTIONS.classes, {
     ...stamp(ids.a1),
@@ -177,35 +219,17 @@ export async function createFixture(): Promise<Fixture> {
     leakMarker: 'cny_dp_course',
   });
 
-  const people: Array<{ id: string; roles: string[]; email: string; zh: string; en: string; uid: string; status?: string }> = [
-    { id: ids.uS1, roles: ['student'], email: 's1@demo.school.local', zh: '演示学生一', en: 'Demo Student One', uid: 'uid_s1' },
-    { id: ids.uS2, roles: ['student'], email: 's2@demo.school.local', zh: canary.s2Name, en: 'Demo Student Two', uid: 'uid_s2' },
-    { id: ids.uS3, roles: ['student'], email: 's3@demo.school.local', zh: '演示学生三', en: 'Demo Student Three', uid: 'uid_s3' },
-    { id: ids.uS4, roles: ['student'], email: 's4@demo.school.local', zh: '演示学生四', en: 'Demo Student Four', uid: 'uid_s4' },
-    { id: ids.uMinor, roles: ['student'], email: 'minor@demo.school.local', zh: '演示未同意', en: 'Demo Minor', uid: 'uid_minor', status: 'pending_consent' },
-    { id: ids.p1, roles: ['parent'], email: 'p1@demo.school.local', zh: '演示家长一', en: 'Demo Parent One', uid: 'uid_p1' },
-    { id: ids.p2, roles: ['parent'], email: canary.p2Email, zh: '演示家长二', en: 'Demo Parent Two', uid: 'uid_p2' },
-    { id: ids.p3, roles: ['parent'], email: 'p3@demo.school.local', zh: '演示家长三', en: 'Demo Parent Three', uid: 'uid_p3' },
-    { id: ids.p4, roles: ['parent'], email: 'p4@demo.school.local', zh: '演示家长四', en: 'Demo Parent Four', uid: 'uid_p4' },
-    { id: ids.p5, roles: ['parent'], email: 'p5@demo.school.local', zh: '演示家长五', en: 'Demo Parent Five', uid: 'uid_p5' },
-    { id: ids.t1, roles: ['teacher'], email: 't1@demo.school.local', zh: '演示老师一', en: 'Demo Teacher One', uid: 'uid_t1' },
-    { id: ids.t2, roles: ['teacher'], email: 't2@demo.school.local', zh: '演示老师二', en: 'Demo Teacher Two', uid: 'uid_t2' },
-    { id: ids.t3, roles: ['teacher'], email: 't3@demo.school.local', zh: '演示老师三', en: 'Demo Teacher Three', uid: 'uid_t3' },
-    { id: ids.sv1, roles: ['supervisor'], email: 'sv1@demo.school.local', zh: '演示导师', en: 'Demo Supervisor', uid: 'uid_sv1' },
-    { id: ids.cc1, roles: ['cas_coordinator'], email: 'cc1@demo.school.local', zh: '演示协调员', en: 'Demo Coordinator', uid: 'uid_cc1' },
-    { id: ids.a1, roles: ['admin'], email: 'a1@demo.school.local', zh: '演示管理员', en: 'Demo Admin', uid: 'uid_a1' },
-    { id: ids.ops1, roles: ['ops_mailer'], email: 'ops@demo.school.local', zh: '发件机器人', en: 'Mail Bot', uid: 'uid_ops' },
-  ];
-  for (const person of people) {
+  for (const person of demoAccounts) {
     await put(COLLECTIONS.users, {
       ...stamp(ids.a1),
       _id: person.id,
-      roles: person.roles,
+      roles: [...person.roles],
       displayName: { zh: person.zh, en: person.en },
       email: person.email,
       locale: 'zh',
-      status: person.status ?? 'active',
+      status: 'status' in person ? person.status : 'active',
       mustChangePassword: false,
+      devLoginHash: hashDevPassword(DEV_DEMO_PASSWORD),
     });
     await put(COLLECTIONS.authIdentities, {
       _id: `idn_${person.uid}`,
@@ -337,6 +361,7 @@ export async function createFixture(): Promise<Fixture> {
     description: '请完成本周实验记录',
     dueAt: DUE_SHARED,
     assigneeStudentIds: [ids.s1, ids.s2],
+    assessment: { scheme: 'MYP', criteria: ['A', 'B'] },
   });
   await task({
     _id: ids.taskS2Only,
@@ -363,6 +388,7 @@ export async function createFixture(): Promise<Fixture> {
     description: '已发布成绩的任务',
     dueAt: DUE_SHARED,
     assigneeStudentIds: [ids.s1],
+    assessment: { scheme: 'MYP', criteria: ['A'] },
   });
   await task({
     _id: ids.taskS1Draft,
@@ -376,6 +402,21 @@ export async function createFixture(): Promise<Fixture> {
     description: '草稿成绩不可见',
     dueAt: DUE_SHARED,
     assigneeStudentIds: [ids.s1],
+    assessment: { scheme: 'MYP', criteria: ['A'] },
+  });
+  await task({
+    _id: ids.taskS1Prior,
+    courseId: ids.courseSci,
+    subjectId: ids.subjectSci,
+    programme: 'MYP',
+    termId: ids.termPrev,
+    yearId: ids.yearPrev,
+    type: 'summative',
+    title: '上学期科学',
+    description: '上一学期已发布的科学成绩',
+    dueAt: Date.parse('2026-06-01T07:00:00.000Z'),
+    assigneeStudentIds: [ids.s1],
+    assessment: { scheme: 'MYP', criteria: ['A', 'B'] },
   });
   await task({
     _id: ids.taskS3,
@@ -390,6 +431,7 @@ export async function createFixture(): Promise<Fixture> {
     dueAt: DUE_SHARED,
     assigneeStudentIds: [ids.s3],
     createdBy: ids.t2,
+    assessment: { scheme: 'DP', componentCode: 'IA' },
   });
 
   async function progress(doc: Doc) {
@@ -399,6 +441,7 @@ export async function createFixture(): Promise<Fixture> {
   await progress({ _id: `${ids.taskShared}_${ids.s2}`, taskId: ids.taskShared, courseId: ids.courseSci, studentId: ids.s2, termId: ids.term, subjectId: ids.subjectSci, dueAt: DUE_SHARED, status: 'graded', displayStatus: 'graded', isOverdue: false, isLate: false, leakMarker: canary.s2Progress });
   await progress({ _id: `${ids.taskS2Only}_${ids.s2}`, taskId: ids.taskS2Only, courseId: ids.courseSci, studentId: ids.s2, termId: ids.term, subjectId: ids.subjectSci, dueAt: DUE_S2, status: 'not_started', displayStatus: 'overdue', isOverdue: true, isLate: false, leakMarker: canary.s2Progress });
   await progress({ _id: `${ids.taskS1Released}_${ids.s1}`, taskId: ids.taskS1Released, courseId: ids.courseSci, studentId: ids.s1, termId: ids.term, subjectId: ids.subjectSci, dueAt: DUE_SHARED, status: 'graded', displayStatus: 'graded', isOverdue: false, isLate: false });
+  await progress({ _id: `${ids.taskS1Prior}_${ids.s1}`, taskId: ids.taskS1Prior, courseId: ids.courseSci, studentId: ids.s1, termId: ids.termPrev, subjectId: ids.subjectSci, dueAt: Date.parse('2026-06-01T07:00:00.000Z'), status: 'graded', displayStatus: 'graded', isOverdue: false, isLate: false });
   await progress({ _id: `${ids.taskS1Draft}_${ids.s1}`, taskId: ids.taskS1Draft, courseId: ids.courseSci, studentId: ids.s1, termId: ids.term, subjectId: ids.subjectSci, dueAt: DUE_SHARED, status: 'submitted', displayStatus: 'submitted', isOverdue: false, isLate: false });
   await progress({ _id: `${ids.taskS3}_${ids.s3}`, taskId: ids.taskS3, courseId: ids.coursePhy, studentId: ids.s3, termId: ids.term, subjectId: ids.subjectPhy, dueAt: DUE_SHARED, status: 'not_started', displayStatus: 'not_started', isOverdue: false, isLate: false });
   await progress({ _id: `${ids.taskShared}_${ids.minor}`, taskId: ids.taskShared, courseId: ids.courseSci, studentId: ids.minor, termId: ids.term, subjectId: ids.subjectSci, dueAt: DUE_SHARED, status: 'not_started', displayStatus: 'not_started', isOverdue: false, isLate: false });
@@ -445,6 +488,24 @@ export async function createFixture(): Promise<Fixture> {
     status: 'released',
     releasedAt: now,
     history: [{ at: now, by: ids.t1, diff: canary.s1History }],
+    version: 1,
+  });
+  await put(COLLECTIONS.assessments, {
+    ...stamp(ids.t1),
+    _id: `${ids.taskS1Prior}_${ids.s1}`,
+    taskId: ids.taskS1Prior,
+    studentId: ids.s1,
+    courseId: ids.courseSci,
+    subjectId: ids.subjectSci,
+    termId: ids.termPrev,
+    yearId: ids.yearPrev,
+    scheme: 'MYP',
+    subject: '科学',
+    taskTitle: '上学期科学',
+    myp: { A: { level: 4, comment: '上学期 A' }, B: { level: 5, comment: '上学期 B' } },
+    overallComment: '上学期总评',
+    status: 'released',
+    releasedAt: Date.parse('2026-06-02T02:00:00.000Z'),
     version: 1,
   });
   await put(COLLECTIONS.assessments, {
@@ -701,6 +762,29 @@ export async function createFixture(): Promise<Fixture> {
     schoolId: ids.school,
   });
 
+  const repo = new Repo(db);
+  await ensureAssessmentCatalog(repo, ids.school, ids.a1, now);
+  await recomputeTermSummary(repo, {
+    schoolId: ids.school,
+    studentId: ids.s1,
+    subjectId: ids.subjectSci,
+    termId: ids.term,
+    yearId: ids.year,
+    scheme: 'MYP',
+    actorId: ids.t1,
+    now,
+  });
+  await recomputeTermSummary(repo, {
+    schoolId: ids.school,
+    studentId: ids.s1,
+    subjectId: ids.subjectSci,
+    termId: ids.termPrev,
+    yearId: ids.yearPrev,
+    scheme: 'MYP',
+    actorId: ids.t1,
+    now,
+  });
+
   return { db, now, pepper: PEPPER };
 }
 
@@ -710,13 +794,6 @@ export function devPasswordHash(password: string): string {
 
 export function verifyDevPassword(email: string, password: string): { uid: string; userId: string } | null {
   if (password !== DEV_DEMO_PASSWORD) return null;
-  const directory: Record<string, { uid: string; userId: string }> = {
-    'p1@demo.school.local': { uid: 'uid_p1', userId: ids.p1 },
-    'p5@demo.school.local': { uid: 'uid_p5', userId: ids.p5 },
-    't1@demo.school.local': { uid: 'uid_t1', userId: ids.t1 },
-    's1@demo.school.local': { uid: 'uid_s1', userId: ids.uS1 },
-    'a1@demo.school.local': { uid: 'uid_a1', userId: ids.a1 },
-    'minor@demo.school.local': { uid: 'uid_minor', userId: ids.uMinor },
-  };
-  return directory[email.toLowerCase()] ?? null;
+  const found = demoAccounts.find((person) => person.email.toLowerCase() === email.trim().toLowerCase());
+  return found ? { uid: found.uid, userId: found.id } : null;
 }

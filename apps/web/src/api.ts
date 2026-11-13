@@ -55,6 +55,10 @@ export function verifyEmailCode(email: string, code: string) {
   return post<{ token: string }>('/api/dev/email-code/verify', { email, code });
 }
 
+export function uploadDevFile(name: string, mime: string, dataBase64: string) {
+  return post<{ tmpCloudFileId: string; size: number }>('/api/dev/upload', { name, mime, dataBase64 }, true);
+}
+
 export function callFunction<T>(name: string, action: string, data: unknown = {}) {
   return post<T>(
     `/api/${name}`,
@@ -76,6 +80,7 @@ export interface Me {
     locale: 'zh' | 'en';
     status: string;
     mustChangePassword: boolean;
+    studentId?: string;
   };
   children: Array<{
     studentId: string;

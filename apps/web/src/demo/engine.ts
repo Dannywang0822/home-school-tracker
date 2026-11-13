@@ -94,6 +94,22 @@ export async function demoRequest(path: string, body: unknown, token: string): P
     demo.sessions.set(issued, known.uid);
     return { ok: true, data: { token: issued }, requestId: 'demo-code' };
   }
+  if (path === '/api/dev/upload') {
+    const uid = demo.sessions.get(token) ?? (token.startsWith('demo.') ? token.slice(5) : '');
+    const name = typeof record.name === 'string' ? record.name.slice(0, 180) : '';
+    const mime = typeof record.mime === 'string' ? record.mime : '';
+    const dataBase64 = typeof record.dataBase64 === 'string' ? record.dataBase64 : '';
+    if (!uid || !name || !mime || !dataBase64) {
+      return { ok: false, error: { code: 'INVALID_ARGUMENT', message: '参数不正确' }, requestId: 'demo-upload' };
+    }
+    const body = decodeBase64(dataBase64);
+    if (body.byteLength === 0 || body.byteLength > 20 * 1024 * 1024) {
+      return { ok: false, error: { code: 'FILE_TOO_LARGE', message: '文件太大' }, requestId: 'demo-upload' };
+    }
+    const tmp = `hst_tmp/demo/${crypto.randomUUID().replaceAll('-', '')}`;
+    await demo.storage.put(tmp, { body, mime });
+    return { ok: true, data: { tmpCloudFileId: tmp, size: body.byteLength }, requestId: 'demo-upload' };
+  }
   if (path === '/api/dev/password') {
     const uid = demo.sessions.get(token) ?? (token.startsWith('demo.') ? token.slice(5) : '');
     const password = typeof record.password === 'string' ? record.password : '';
@@ -119,4 +135,11 @@ export async function demoRequest(path: string, body: unknown, token: string): P
 
 export function isStaticDemo(): boolean {
   return import.meta.env.VITE_STATIC_DEMO === 'true';
+}
+
+function decodeBase64(value: string): Uint8Array {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes;
 }

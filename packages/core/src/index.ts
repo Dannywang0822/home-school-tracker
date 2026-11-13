@@ -15,3 +15,6 @@ export { evaluateDatabaseRead, evaluateDatabaseWrite, evaluateInvoke, evaluateSt
 export { hashInviteCode, hashDevPassword, sha256, weekBoundsShanghai, quietUntil, safeTemplateVars } from './util.js';
 export { MemoryObjectStorage, type ObjectStorage } from './storage/types.js';
 export { publishDueTasks, markOverdue } from './tasks/lifecycle.js';
+export { asProgressStatus, canMarkDone, canStart, canSubmit, type ProgressGate, type ProgressStatus } from './tasks/progress.js';
+export { ensureAssessmentCatalog } from './assessment/catalog.js';
+export { recomputeTermSummary } from './assessment/summary.js';

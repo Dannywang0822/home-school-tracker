@@ -9,6 +9,7 @@
         </button>
       </div>
       <p><router-link :to="`/t/tasks/new?course=${courseId}`">{{ t('newTask') }}</router-link></p>
+      <p v-if="courseId"><router-link :to="`/t/grade-matrix/${courseId}`">{{ t('gradeMatrix') }}</router-link></p>
       <p v-if="!items.length" class="note">{{ t('noTasks') }}</p>
       <van-cell-group v-else inset>
         <van-cell v-for="item in items" :key="item.taskId" :title="item.title" :label="formatDue(item.dueAt, locale)" is-link :to="`/t/tasks/${item.taskId}`" />
