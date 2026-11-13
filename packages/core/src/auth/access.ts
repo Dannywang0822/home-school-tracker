@@ -71,9 +71,10 @@ export function maskDisplayName(name: string): string {
   return `${trimmed.slice(0, 1)}**`;
 }
 
-export function projectProgress(doc: Doc): { displayStatus: string; isLate: boolean; submittedAt?: number } {
+export function projectProgress(doc: Doc): { status: string; displayStatus: string; isLate: boolean; submittedAt?: number } {
   const submittedAt = typeof doc.submittedAt === 'number' ? doc.submittedAt : undefined;
   return {
+    status: asString(doc.status) ?? 'not_started',
     displayStatus: asString(doc.displayStatus) ?? 'not_started',
     isLate: doc.isLate === true,
     ...(submittedAt != null ? { submittedAt } : {}),
@@ -93,6 +94,7 @@ export function projectTask(doc: Doc): Record<string, unknown> {
     courseId: doc.courseId,
     subjectId: doc.subjectId,
     programme: doc.programme,
+    assessment: doc.assessment ?? null,
   };
 }
 

@@ -12,7 +12,7 @@ import {
 import type { ActionContext } from '../auth/registry.js';
 import { registerAction } from '../auth/registry.js';
 import type { Doc } from '../db/types.js';
-import { asNumber, asString, asStringArray, nid, sha256, weekBoundsShanghai } from '../util.js';
+import { asNumber, asString, asStringArray, isRecord, nid, sha256, weekBoundsShanghai } from '../util.js';
 
 const idSchema = z.string().min(1).max(80);
 
@@ -39,16 +39,31 @@ registerAction({
     if (!task) return { task: null };
     const projected = projectTask(task);
     if (ctx.caller.roles.includes('teacher') || ctx.caller.roles.includes('admin')) {
-      if (!input.studentId) return { task: projected };
+      if (!input.studentId) return { task: projected, attachments: await taskAttachments(ctx, task) };
       if (!(await canReadStudentAcademic(ctx, input.studentId))) return { task: projected };
       const progress = await ctx.repo.progressFor(task._id, input.studentId);
-      return { task: projected, progress: progress ? projectProgress(progress) : undefined };
+      const grade = await gradeFor(ctx, task._id, input.studentId, true);
+      return {
+        task: projected,
+        attachments: await taskAttachments(ctx, task),
+        progress: progress ? projectProgress(progress) : undefined,
+        ...(grade ? { assessment: grade } : {}),
+        threadId: await threadFor(ctx, task._id, input.studentId),
+      };
     }
     const studentId = await studentForTask(ctx, input.studentId, task._id);
     if (!studentId) throw new AppError('NOT_FOUND', '资源不存在');
     const progress = await ctx.repo.progressFor(task._id, studentId);
     if (!progress) throw new AppError('NOT_FOUND', '资源不存在');
-    return { task: projected, progress: projectProgress(progress), studentId };
+    const grade = await gradeFor(ctx, task._id, studentId, false);
+    return {
+      task: projected,
+      attachments: await taskAttachments(ctx, task),
+      progress: projectProgress(progress),
+      studentId,
+      ...(grade ? { assessment: grade } : {}),
+      threadId: await threadFor(ctx, task._id, studentId),
+    };
   },
 });
 
@@ -103,7 +118,12 @@ registerAction({
         if (projected) items.push(projected);
         continue;
       }
-      if (teacherSeesDraft && (await ctx.repo.teachesStudent(ctx.caller.userId, input.studentId, ctx.caller.schoolId, ctx.clock.now()))) {
+      const courseId = asString(doc.courseId);
+      if (
+        teacherSeesDraft &&
+        courseId &&
+        (await ctx.repo.teachesCourse(ctx.caller.userId, courseId, ctx.caller.schoolId, ctx.clock.now()))
+      ) {
         items.push({
           taskId: doc.taskId,
           taskTitle: doc.taskTitle,
@@ -126,16 +146,71 @@ registerAction({
   input: z.object({ studentId: idSchema, yearId: idSchema.optional() }).strip(),
   scope: async (ctx, input) => canReadStudentAcademic(ctx, input.studentId),
   async handler(ctx, input) {
-    const rows = await ctx.repo.listSummaries(input.studentId, ctx.caller.schoolId);
+    let rows = await ctx.repo.listSummaries(input.studentId, ctx.caller.schoolId);
+    if (input.yearId) {
+      const terms = await ctx.repo.listSchool(COLLECTIONS.terms, ctx.caller.schoolId);
+      const ids = new Set(terms.filter((doc) => doc.yearId === input.yearId).map((doc) => doc._id));
+      rows = rows.filter((doc) => ids.has(asString(doc.termId) ?? ''));
+    }
+    const released = await ctx.repo.listAssessmentsForStudent(input.studentId, ctx.caller.schoolId);
+    const byTerm = new Map<string, Doc[]>();
+    for (const doc of rows) {
+      const termId = asString(doc.termId) ?? '';
+      const list = byTerm.get(termId) ?? [];
+      list.push(doc);
+      byTerm.set(termId, list);
+    }
+    const growth: Record<string, Record<string, { termId: string; level: number }[]>> = {};
+    for (const doc of rows) {
+      const subjectId = asString(doc.subjectId) ?? '';
+      const termId = asString(doc.termId) ?? '';
+      const bucket = growth[subjectId] ?? {};
+      if (isRecord(doc.myp)) {
+        for (const key of ['A', 'B', 'C', 'D']) {
+          const cell = doc.myp[key];
+          const level = isRecord(cell) ? asNumber(cell.bestFit) : undefined;
+          if (level == null) continue;
+          const series = bucket[key] ?? [];
+          series.push({ termId, level });
+          bucket[key] = series;
+        }
+      }
+      if (isRecord(doc.dp)) {
+        const predicted = asNumber(doc.dp.predicted);
+        if (predicted != null) {
+          const series = bucket.predicted ?? [];
+          series.push({ termId, level: predicted });
+          bucket.predicted = series;
+        }
+      }
+      growth[subjectId] = bucket;
+    }
     return {
-      studentId: input.studentId,
-      terms: rows.map((doc) => ({
-        termId: doc.termId,
-        subjectId: doc.subjectId,
-        scheme: doc.scheme,
-        myp: doc.myp,
-        dp: doc.dp,
+      terms: [...byTerm.entries()].map(([termId, subjects]) => ({
+        termId,
+        subjects: subjects.map((doc) => {
+          const subjectId = asString(doc.subjectId) ?? '';
+          const ia = released.find(
+            (row) =>
+              row.status === 'released' &&
+              row.subjectId === subjectId &&
+              row.termId === termId &&
+              isRecord(row.dp) &&
+              row.dp.componentCode === 'IA',
+          );
+          return {
+            subjectId,
+            scheme: doc.scheme,
+            myp: doc.myp,
+            dp: doc.dp,
+            teacherOverride: isRecord(doc.teacherOverride)
+              ? { grade: doc.teacherOverride.grade, comment: doc.teacherOverride.comment }
+              : undefined,
+            ...(ia && isRecord(ia.dp) ? { ia: { status: 'scored', score: ia.dp.score } } : {}),
+          };
+        }),
       })),
+      growth,
     };
   },
 });
@@ -525,6 +600,42 @@ async function threadStudentIds(ctx: ActionContext, requested?: string): Promise
   }
   if (requested && (await canReadStudentAcademic(ctx, requested))) return [requested];
   return [];
+}
+
+async function gradeFor(ctx: ActionContext, taskId: string, studentId: string, includeDraft: boolean): Promise<Record<string, unknown> | undefined> {
+  const doc = await ctx.repo.db.get(COLLECTIONS.assessments, `${taskId}_${studentId}`);
+  if (!doc || doc.schoolId !== ctx.caller.schoolId || doc.studentId !== studentId) return undefined;
+  if (doc.status === 'released') {
+    const projected = projectAssessment(doc);
+    return projected ? { ...projected, status: 'released', version: doc.version } : undefined;
+  }
+  if (!includeDraft || doc.status !== 'draft') return undefined;
+  return {
+    taskId: doc.taskId,
+    status: 'draft',
+    version: doc.version,
+    myp: doc.myp,
+    dp: doc.dp,
+    overallComment: doc.overallComment ?? '',
+  };
+}
+
+async function threadFor(ctx: ActionContext, taskId: string, studentId: string): Promise<string | undefined> {
+  const rows = await ctx.repo.db.query(
+    COLLECTIONS.threads,
+    (doc) => doc.deletedAt == null && doc.contextType === 'task' && doc.contextId === taskId && doc.studentId === studentId,
+  );
+  return rows[0]?._id;
+}
+
+async function taskAttachments(ctx: ActionContext, task: Doc): Promise<{ fileId: string; name: unknown; size: unknown }[]> {
+  const items = [];
+  for (const fileId of asStringArray(task.attachmentIds)) {
+    const file = await ctx.repo.getFile(fileId);
+    if (!file || file.schoolId !== ctx.caller.schoolId) continue;
+    items.push({ fileId: file._id, name: file.name, size: file.size });
+  }
+  return items;
 }
 
 async function loadChildren(ctx: ActionContext) {

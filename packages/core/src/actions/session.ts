@@ -46,6 +46,7 @@ async function relationOf(ctx: Parameters<typeof activeChildIds>[0], studentId: 
 
 async function userView(ctx: Parameters<typeof activeChildIds>[0]) {
   const user = await ctx.repo.getUser(ctx.caller.userId);
+  const student = ctx.caller.roles.includes('student') ? await ctx.repo.findStudentByUserId(ctx.caller.userId) : null;
   return {
     id: ctx.caller.userId,
     displayName: displayNameOf(user),
@@ -53,6 +54,7 @@ async function userView(ctx: Parameters<typeof activeChildIds>[0]) {
     locale: ctx.caller.locale,
     status: ctx.caller.status,
     mustChangePassword: ctx.caller.mustChangePassword,
+    ...(student ? { studentId: student._id } : {}),
   };
 }
 

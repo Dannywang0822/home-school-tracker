@@ -6,6 +6,7 @@ import { registerAction } from '../auth/registry.js';
 import type { Doc } from '../db/types.js';
 import type { Repo } from '../repo.js';
 import { enrolledStudentIds, publishTask, refreshTaskStats } from '../tasks/lifecycle.js';
+import { asProgressStatus, canMarkDone, canStart, canSubmit } from '../tasks/progress.js';
 import { asNumber, asString, asStringArray, nid } from '../util.js';
 
 const idSchema = z.string().min(1).max(80);
@@ -112,6 +113,11 @@ registerAction({
     dueAt: z.number().optional(),
     allowLate: z.boolean().optional(),
     attachmentIds: z.array(idSchema).max(10).optional(),
+    assessment: z.object({
+      scheme: z.enum(['MYP', 'DP']),
+      criteria: z.array(z.enum(['A', 'B', 'C', 'D'])).max(4).optional(),
+      componentCode: z.string().max(20).optional(),
+    }).optional(),
   }).strip(),
   scope: async (ctx, input) => teacherOwnsTask(ctx.repo, ctx.caller.userId, ctx.caller.schoolId, input.taskId, ctx.clock.now()),
   async handler(ctx, input) {
@@ -123,6 +129,22 @@ registerAction({
     if (input.allowLate != null) patch.allowLate = input.allowLate;
     if (input.attachmentIds) patch.attachmentIds = input.attachmentIds;
     if (input.dueAt != null) patch.dueAt = input.dueAt;
+    if (input.assessment) {
+      const current = task.assessment;
+      const previous = current && typeof current === 'object' && Array.isArray((current as { criteria?: unknown }).criteria)
+        ? ((current as { criteria: string[] }).criteria)
+        : [];
+      const next = new Set<string>(input.assessment.criteria ?? []);
+      const removed = previous.filter((item) => !next.has(item));
+      if (removed.length > 0) {
+        const released = await ctx.repo.db.query(
+          COLLECTIONS.assessments,
+          (doc) => doc.taskId === task._id && doc.status === 'released' && doc.deletedAt == null,
+        );
+        if (released.length > 0) throw new AppError('FAILED_PRECONDITION', '已经发布成绩，不能去掉关联的标准');
+      }
+      patch.assessment = input.assessment;
+    }
     const updated = await ctx.repo.db.compareAndSet(COLLECTIONS.tasks, task._id, input.version, patch);
     if (!updated.ok) throw new AppError(updated.reason === 'conflict' ? 'CONFLICT' : 'NOT_FOUND', updated.reason === 'conflict' ? '数据已更新，请刷新后重试' : '资源不存在');
     if (input.dueAt != null) {
@@ -238,10 +260,12 @@ registerAction({
     for (const row of rows) {
       const student = await ctx.repo.getStudent(asString(row.studentId) ?? '');
       const user = student ? await ctx.repo.getUser(asString(student.userId) ?? '') : null;
+      const grade = await ctx.repo.db.get(COLLECTIONS.assessments, `${input.taskId}_${asString(row.studentId) ?? ''}`);
       items.push({
         studentId: row.studentId,
         displayName: displayNameOf(user),
         ...projectProgress(row),
+        assessmentStatus: grade?.status === 'released' || grade?.status === 'draft' ? grade.status : 'none',
       });
     }
     return { items };
@@ -257,8 +281,9 @@ registerAction({
   async handler(ctx, input) {
     const progress = await ownProgress(ctx.repo, ctx.caller.userId, input.taskId);
     if (!progress) throw new AppError('NOT_FOUND', '资源不存在');
-    if (progress.status === 'graded') throw new AppError('FAILED_PRECONDITION', '当前状态不允许此操作');
-    if (progress.status === 'not_started') {
+    const status = asProgressStatus(progress.status);
+    if (!canStart({ status, requiresSubmission: true })) throw new AppError('FAILED_PRECONDITION', '当前状态不允许此操作');
+    if (status === 'not_started') {
       await ctx.repo.db.compareAndSet(COLLECTIONS.taskProgress, progress._id, undefined, {
         status: 'in_progress',
         displayStatus: progress.isOverdue === true ? 'overdue' : 'in_progress',
@@ -279,7 +304,8 @@ registerAction({
     const task = await ctx.repo.getTask(input.taskId);
     const progress = await ownProgress(ctx.repo, ctx.caller.userId, input.taskId);
     if (!task || !progress || task.status !== 'published') throw new AppError('NOT_FOUND', '资源不存在');
-    if (task.requiresSubmission !== false) throw new AppError('FAILED_PRECONDITION', '当前状态不允许此操作');
+    const gate = { status: asProgressStatus(progress.status), requiresSubmission: task.requiresSubmission !== false };
+    if (!canMarkDone(gate)) throw new AppError('FAILED_PRECONDITION', '当前状态不允许此操作');
     if (task.allowLate !== true && ctx.clock.now() > (asNumber(task.dueAt) ?? 0)) throw new AppError('DEADLINE_PASSED', '已过截止时间');
     await ctx.repo.db.compareAndSet(COLLECTIONS.taskProgress, progress._id, undefined, {
       status: 'submitted',
@@ -308,8 +334,8 @@ registerAction({
     const task = await ctx.repo.getTask(input.taskId);
     const progress = await ownProgress(ctx.repo, ctx.caller.userId, input.taskId);
     if (!task || !progress || task.status !== 'published') throw new AppError('NOT_FOUND', '资源不存在');
-    if (task.requiresSubmission === false) throw new AppError('FAILED_PRECONDITION', '当前状态不允许此操作');
-    if (progress.status === 'graded') throw new AppError('FAILED_PRECONDITION', '当前状态不允许此操作');
+    const gate = { status: asProgressStatus(progress.status), requiresSubmission: task.requiresSubmission !== false };
+    if (!canSubmit(gate)) throw new AppError('FAILED_PRECONDITION', '当前状态不允许此操作');
     const now = ctx.clock.now();
     const dueAt = asNumber(task.dueAt) ?? now;
     if (task.allowLate !== true && now > dueAt) throw new AppError('DEADLINE_PASSED', '已过截止时间');

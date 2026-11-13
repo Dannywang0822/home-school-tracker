@@ -9,7 +9,7 @@ export interface WeekPlan {
 }
 
 /** Dates are calendar days in Asia/Shanghai. */
-export const PLAN_UPDATED = '2026-11-09';
+export const PLAN_UPDATED = '2026-11-13';
 
 export const WEEKS: WeekPlan[] = [
   {
@@ -82,121 +82,121 @@ export const WEEKS: WeekPlan[] = [
   },
   {
     id: 'W4',
-    status: 'paused',
-    updated: '2026-11-09',
+    status: 'done',
+    updated: '2026-11-13',
     zh: {
       title: 'IB 评估',
-      goal: 'MYP Criteria A–D、DP 1–7 与 IA、草稿与发布、学期汇总和成长曲线。',
-      delivery: '家长能看到已发布的分数和评语。TX-03/04 通过。',
-      note: 'Danny 决定第 4 周及以后暂缓。',
+      goal: 'MYP Criteria A–D、PP/CP、DP 评估组成、草稿与发布、学期汇总和成长曲线。',
+      delivery: '老师发布后，家长和学生能看到分数和评语。TX-03、TX-04、PX-22 通过。',
+      note: '本分支实现。通知中心、邮件队列和每周汇总仍是第 5 周。IA 只保留数据挂钩，不做第 7 周的里程碑页面。',
     },
     en: {
       title: 'IB assessment',
-      goal: 'MYP criteria A–D, DP 1–7 and IA, draft versus release, term summaries and growth.',
-      delivery: 'Parents see released scores and comments. TX-03/04 pass.',
-      note: 'Danny paused week 4 and everything after it.',
+      goal: 'MYP criteria A–D, PP/CP, DP components, draft versus release, term summaries and growth.',
+      delivery: 'After a teacher releases a grade, the parent and student see the score and comment. TX-03, TX-04 and PX-22 pass.',
+      note: 'Implemented on this branch. The notification center, mail queue and weekly digest stay in week 5. IA is only a data hook, not the week 7 milestone screens.',
     },
   },
   {
     id: 'W5',
-    status: 'paused',
-    updated: '2026-11-09',
+    status: 'planned',
+    updated: '2026-11-13',
     zh: {
       title: '反馈与通知',
       goal: '对话串、未读、邮件队列、每周汇总、通知偏好。微信订阅消息保持空实现。',
       delivery: '成绩发布后家长收到队列中的邮件。相关 PX/ST 用例通过。',
-      note: '暂缓。第 1 周已经留下适配器接口，发信仍由运营 bot 代发。',
+      note: '尚未开始。第 4 周只写入站内通知和一条老师评语，不做到通知中心。',
     },
     en: {
       title: 'Feedback and notifications',
       goal: 'Threads, unread counts, the mail queue, weekly digests and preferences. WeChat subscribe stays a stub.',
       delivery: 'A released grade queues mail for the parent. Related PX/ST cases pass.',
-      note: 'Paused. Week 1 already left the adapter interface. Sending stays with the ops bot.',
+      note: 'Not started. Week 4 only writes an in-app notice and one teacher comment. It does not build the notification center.',
     },
   },
   {
     id: 'W6',
-    status: 'paused',
-    updated: '2026-11-09',
+    status: 'planned',
+    updated: '2026-11-13',
     zh: {
       title: 'CAS',
       goal: '经历、反思、证据、协调员审核、7 项学习成果和 CAS 项目。',
       delivery: '演示数据里的 CAS 流程能走通。SX-04、MX-03 通过。',
-      note: '暂缓。',
+      note: '尚未开始。',
     },
     en: {
       title: 'CAS',
       goal: 'Experiences, reflections, evidence, coordinator review, the seven learning outcomes and CAS projects.',
       delivery: 'The sample CAS flow works. SX-04 and MX-03 pass.',
-      note: 'Paused.',
+      note: 'Not started.',
     },
   },
   {
     id: 'W7',
-    status: 'paused',
-    updated: '2026-11-09',
+    status: 'planned',
+    updated: '2026-11-13',
     zh: {
       title: '里程碑（EE / 个人项目 / 社区项目）',
       goal: '模板、计划、导师、RPPF、逾期提醒给学生和家长。',
       delivery: 'EE 逾期提醒可以进发件队列。MX-01/02、SX-05 通过。',
-      note: '暂缓。',
+      note: '尚未开始。',
     },
     en: {
       title: 'Milestones (EE / personal project / community project)',
       goal: 'Templates, plans, supervisors, RPPF, and overdue reminders for students and parents.',
       delivery: 'An overdue EE can queue a reminder. MX-01/02 and SX-05 pass.',
-      note: 'Paused.',
+      note: 'Not started.',
     },
   },
   {
     id: 'W8',
-    status: 'paused',
-    updated: '2026-11-09',
+    status: 'planned',
+    updated: '2026-11-13',
     zh: {
       title: '看板、演示数据、安全审计、上云',
       goal: '完善各角色看板，种入 MYP/DP 各一班演示数据，做手机走查，并部署到 CloudBase。',
       delivery: '安全审计报告通过，并给出部署地址。',
-      note: '暂缓。当前演示是 GitHub Pages 上的静态站，不是腾讯云生产环境。',
+      note: '尚未开始。当前演示仍是 GitHub Pages 上的静态站，不是腾讯云生产环境。',
     },
     en: {
       title: 'Dashboards, demo data, security audit, cloud deploy',
       goal: 'Finish role dashboards, seed one MYP and one DP class, check mobile browsers, and deploy to CloudBase.',
       delivery: 'The security audit report passes and a deploy URL is published.',
-      note: 'Paused. The current demo is a static GitHub Pages site, not the Tencent production environment.',
+      note: 'Not started. The current demo is still the static GitHub Pages site, not the Tencent production environment.',
     },
   },
   {
     id: 'W9',
-    status: 'paused',
-    updated: '2026-11-09',
+    status: 'planned',
+    updated: '2026-11-13',
     zh: {
       title: '缓冲',
       goal: '修缺陷、学校试用、文档定稿、写小程序接入说明。',
       delivery: '试用问题有结论，小程序只需新增前端。',
-      note: '暂缓。',
+      note: '尚未开始。',
     },
     en: {
       title: 'Buffer',
       goal: 'Fix defects, run a school trial, freeze the docs, and write the mini-program handoff.',
       delivery: 'Trial issues are resolved. A mini program would add a frontend only.',
-      note: 'Paused.',
+      note: 'Not started.',
     },
   },
 ];
 
 export const CURRENT_WORK = {
-  status: 'in_progress' as WeekStatus,
-  updated: '2026-11-09',
+  status: 'done' as WeekStatus,
+  updated: '2026-11-13',
   zh: {
-    title: '静态演示与 GitHub Pages',
-    goal: '不依赖本地 API 和 CloudBase，在浏览器里用虚构数据走通管理员、老师、学生、家长前三周的主流程，并把构建结果发布到 GitHub Pages。',
-    delivery: 'npm run build -w @hst/web 产出静态文件。推到 main 或手动触发后，由 GitHub Actions 发布。',
-    note: '演示站预计地址 https://dannywang0822.github.io/home-school-tracker/ 。刷新页面会回到初始数据。',
+    title: '第 4 周 IB 评估',
+    goal: '老师按任务关联的标准打分、保存草稿并发布。家长和学生只看见已发布的分数、评语和成长曲线。',
+    delivery: '静态演示里可以用 t1 给「科学实验」打分并发布，再用 p1 在成绩页和任务页看到结果。「科学测验」仍是已发布示例。',
+    note: '第 5 周还没开始。本页不包含通知中心、运营发信或 CAS。',
   },
   en: {
-    title: 'Static demo and GitHub Pages',
-    goal: 'Walk the admin, teacher, student and parent flows from the first three weeks in the browser, with fictional data and no local API or CloudBase, then publish the build to GitHub Pages.',
-    delivery: 'npm run build -w @hst/web emits static files. GitHub Actions publishes them on push to main or when started by hand.',
-    note: 'Expected site: https://dannywang0822.github.io/home-school-tracker/ . A refresh restores the initial demo data.',
+    title: 'Week 4 IB assessment',
+    goal: 'A teacher scores only the criteria linked on the task, saves a draft, and releases it. Parents and students see only released scores, comments and the growth curve.',
+    delivery: 'In the static demo, t1 can grade and release 「科学实验」, then p1 sees it on the grades page and the task page. 「科学测验」 stays the already released example.',
+    note: 'Week 5 has not started. This page does not include a notification center, the ops mailer, or CAS.',
   },
 };

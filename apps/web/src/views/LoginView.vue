@@ -45,6 +45,7 @@
           <li>p1@demo.school.local · {{ t('role.parent') }}</li>
           <li>t1@demo.school.local · {{ t('role.teacher') }}</li>
           <li>s1@demo.school.local · {{ t('role.student') }}</li>
+          <li>s2@demo.school.local · {{ t('role.student') }}</li>
           <li>a1@demo.school.local · {{ t('role.admin') }}</li>
           <li>p5@demo.school.local · {{ t('role.parent') }}</li>
           <li>minor@demo.school.local · {{ t('role.student') }}</li>

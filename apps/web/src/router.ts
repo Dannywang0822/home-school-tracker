@@ -19,10 +19,14 @@ const router = createRouter({
     { path: '/t/tasks', component: () => import('./views/tasks/TeacherTasks.vue'), meta: { role: 'teacher' } },
     { path: '/t/tasks/new', component: () => import('./views/tasks/TeacherTaskNew.vue'), meta: { role: 'teacher' } },
     { path: '/t/tasks/:taskId', component: () => import('./views/tasks/TeacherTaskDetail.vue'), meta: { role: 'teacher' } },
+    { path: '/t/tasks/:taskId/grade/:studentId', component: () => import('./views/grades/TeacherGrade.vue'), meta: { role: 'teacher' } },
+    { path: '/t/grade-matrix/:courseId', component: () => import('./views/grades/GradeMatrix.vue'), meta: { role: 'teacher' } },
     { path: '/s/tasks', component: () => import('./views/tasks/StudentTasks.vue'), meta: { role: 'student' } },
     { path: '/s/tasks/:taskId', component: () => import('./views/tasks/StudentTaskDetail.vue'), meta: { role: 'student' } },
+    { path: '/s/grades', component: () => import('./views/grades/GradesView.vue'), meta: { role: 'student' } },
     { path: '/p/tasks', component: () => import('./views/tasks/ParentTasks.vue'), meta: { role: 'parent' } },
     { path: '/p/tasks/:taskId', component: () => import('./views/tasks/ParentTaskDetail.vue'), meta: { role: 'parent' } },
+    { path: '/p/grades', component: () => import('./views/grades/GradesView.vue'), meta: { role: 'parent' } },
   ],
 });
 

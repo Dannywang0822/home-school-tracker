@@ -1,4 +1,5 @@
 import eslint from '@eslint/js';
+import pluginVue from 'eslint-plugin-vue';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
@@ -7,7 +8,6 @@ export default tseslint.config(
       '**/node_modules/**',
       '**/dist/**',
       '**/coverage/**',
-      'apps/web/**',
       'functions/**/index.js',
       'docs/**',
     ],
@@ -25,6 +25,37 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       '@typescript-eslint/consistent-type-imports': 'off',
       'no-console': 'off',
+    },
+  },
+  ...pluginVue.configs['flat/recommended'],
+  {
+    files: ['apps/web/**/*.vue'],
+    languageOptions: {
+      parserOptions: {
+        parser: tseslint.parser,
+        extraFileExtensions: ['.vue'],
+        sourceType: 'module',
+      },
+      globals: {
+        document: 'readonly',
+        Event: 'readonly',
+        window: 'readonly',
+        File: 'readonly',
+        FileReader: 'readonly',
+        HTMLInputElement: 'readonly',
+        crypto: 'readonly',
+      },
+    },
+    rules: {
+      'vue/max-attributes-per-line': 'off',
+      'vue/singleline-html-element-content-newline': 'off',
+      'vue/html-self-closing': 'off',
+    },
+  },
+  {
+    files: ['apps/web/**/*.ts', 'apps/web/**/*.vue'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
   {
