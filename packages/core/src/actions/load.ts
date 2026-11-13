@@ -7,3 +7,4 @@ import './consent.js';
 import './tasks.js';
 import './files.js';
 import './assessment.js';
+import './feedback.js';

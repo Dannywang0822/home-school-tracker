@@ -107,6 +107,27 @@ const server = createServer(async (req, res) => {
     }
     const record = body as Record<string, unknown>;
 
+    if (url.pathname === '/api/dev/mail') {
+      const session = sessions.get(tokenFrom(req));
+      if (!session) {
+        send(res, 401, { ok: false, error: { code: 'UNAUTHENTICATED', message: '未登录' } });
+        return;
+      }
+      const identities = await fixture.db.query(
+        COLLECTIONS.authIdentities,
+        (doc) => doc.provider === 'cloudbase_uid' && doc.key === session.uid && doc.unboundAt == null,
+      );
+      const userId = identities[0]?.userId;
+      const rows = await fixture.db.query(COLLECTIONS.outbox, (doc) => doc.toUserId === userId && doc.deletedAt == null);
+      send(res, 200, {
+        ok: true,
+        data: {
+          items: rows.map((row) => ({ outboxId: row._id, subject: row.subject, text: row.text, to: row.to })),
+        },
+      });
+      return;
+    }
+
     if (url.pathname === '/api/dev/upload') {
       const session = sessions.get(tokenFrom(req));
       const name = typeof record.name === 'string' ? record.name.slice(0, 180) : '';

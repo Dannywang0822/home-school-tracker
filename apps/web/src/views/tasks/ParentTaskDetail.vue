@@ -11,6 +11,7 @@
         <p v-if="grade.dp">{{ grade.dp.score }}</p>
         <p>{{ grade.overallComment }}</p>
       </article>
+      <ThreadBox v-if="studentId" :task-id="taskId" :student-id="studentId" />
       <p v-if="error" class="error">{{ error }}</p>
     </section>
   </main>
@@ -22,6 +23,7 @@ import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { FUNCTIONS } from '@hst/shared';
 import { callFunction } from '../../api';
+import ThreadBox from '../messages/ThreadBox.vue';
 import { formatDue } from './format';
 
 const { t, locale } = useI18n();
@@ -30,11 +32,13 @@ const task = ref<{ title: string; description: string; dueAt: number } | null>(n
 const progress = ref<{ displayStatus: string } | null>(null);
 const grade = ref<{ overallComment?: string; myp?: Record<string, { level?: number }>; dp?: { score?: number } } | null>(null);
 const error = ref('');
+const taskId = String(route.params.taskId);
+const studentId = ref(String(route.query.student ?? ''));
 
 onMounted(async () => {
   const result = await callFunction<{ task: typeof task.value; progress?: { displayStatus: string }; assessment?: typeof grade.value }>(FUNCTIONS.apiAcademic, 'task.get', {
-    taskId: String(route.params.taskId),
-    studentId: String(route.query.student ?? ''),
+    taskId,
+    studentId: studentId.value,
   });
   if (!result.ok) error.value = result.error.message;
   else {

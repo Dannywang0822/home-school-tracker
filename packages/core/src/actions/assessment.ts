@@ -8,6 +8,7 @@ import { registerAction } from '../auth/registry.js';
 import type { ActionContext } from '../auth/registry.js';
 import type { Doc } from '../db/types.js';
 import { emitNotification } from '../notify/emit.js';
+import { bumpUnread } from '../notify/threads.js';
 import type { Repo } from '../repo.js';
 import { asNumber, asString, asStringArray, isRecord, nid } from '../util.js';
 
@@ -398,13 +399,21 @@ async function writeComment(ctx: ActionContext, task: Doc, studentId: string, bo
     schemaVersion: 1,
   });
   const staff = new Set([...asStringArray(thread.staffUserIds), ctx.caller.userId]);
-  await ctx.repo.db.compareAndSet(COLLECTIONS.threads, thread._id, undefined, {
+  const updatedThread = {
+    ...thread,
     staffUserIds: [...staff],
     lastMessageAt: now,
     lastMessagePreview: body.slice(0, 60),
     messageCount: (asNumber(thread.messageCount) ?? 0) + 1,
+  };
+  await ctx.repo.db.compareAndSet(COLLECTIONS.threads, thread._id, undefined, {
+    staffUserIds: updatedThread.staffUserIds,
+    lastMessageAt: now,
+    lastMessagePreview: body.slice(0, 60),
+    messageCount: updatedThread.messageCount,
     updatedAt: now,
   });
+  await bumpUnread(ctx.repo, updatedThread, ctx.caller.userId, now);
 }
 
 async function notifyGrade(ctx: ActionContext, task: Doc, studentId: string, assessmentRowId: string, dedupeKey: string, title: string): Promise<void> {

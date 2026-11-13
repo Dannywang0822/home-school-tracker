@@ -99,19 +99,19 @@ export const WEEKS: WeekPlan[] = [
   },
   {
     id: 'W5',
-    status: 'planned',
+    status: 'done',
     updated: '2026-11-13',
     zh: {
       title: '反馈与通知',
       goal: '对话串、未读、邮件队列、每周汇总、通知偏好。微信订阅消息保持空实现。',
-      delivery: '成绩发布后家长收到队列中的邮件。相关 PX/ST 用例通过。',
-      note: '尚未开始。第 4 周只写入站内通知和一条老师评语，不做到通知中心。',
+      delivery: '成绩发布后家长收到队列中的邮件。PX-03/07/13/20/22 和 ST-06/07/08 通过。',
+      note: '本分支实现通知中心、留言和发件队列。运营 bot 还不能真正把信发出去。',
     },
     en: {
       title: 'Feedback and notifications',
       goal: 'Threads, unread counts, the mail queue, weekly digests and preferences. WeChat subscribe stays a stub.',
-      delivery: 'A released grade queues mail for the parent. Related PX/ST cases pass.',
-      note: 'Not started. Week 4 only writes an in-app notice and one teacher comment. It does not build the notification center.',
+      delivery: 'A released grade queues mail for the parent. PX-03/07/13/20/22 and ST-06/07/08 pass.',
+      note: 'This branch adds the notification center, comments and the outbox. The ops bot still cannot deliver real mail.',
     },
   },
   {
@@ -188,15 +188,15 @@ export const CURRENT_WORK = {
   status: 'done' as WeekStatus,
   updated: '2026-11-13',
   zh: {
-    title: '第 4 周 IB 评估',
-    goal: '老师按任务关联的标准打分、保存草稿并发布。家长和学生只看见已发布的分数、评语和成长曲线。',
-    delivery: '静态演示里可以用 t1 给「科学实验」打分并发布，再用 p1 在成绩页和任务页看到结果。「科学测验」仍是已发布示例。',
-    note: '第 5 周还没开始。本页不包含通知中心、运营发信或 CAS。',
+    title: '第 5 周反馈与通知',
+    goal: '任务留言、未读、通知中心、通知频率和免打扰。成绩发布写入站内通知和发件队列。',
+    delivery: '静态演示里 t1 发布成绩后，p1 在通知页看到提醒和演示邮件。双方可以在任务页留言。',
+    note: '微信订阅仍是空实现。运营 bot 还不能真正发信。CAS 还没开始。',
   },
   en: {
-    title: 'Week 4 IB assessment',
-    goal: 'A teacher scores only the criteria linked on the task, saves a draft, and releases it. Parents and students see only released scores, comments and the growth curve.',
-    delivery: 'In the static demo, t1 can grade and release 「科学实验」, then p1 sees it on the grades page and the task page. 「科学测验」 stays the already released example.',
-    note: 'Week 5 has not started. This page does not include a notification center, the ops mailer, or CAS.',
+    title: 'Week 5 feedback and notifications',
+    goal: 'Task comments, unread counts, a notification center, frequency and quiet hours. Releasing a grade writes an in-app notice and an outbox row.',
+    delivery: 'In the static demo, after t1 releases a grade, p1 sees the notice and a demo mail preview. Both sides can comment on the task page.',
+    note: 'WeChat subscribe stays a stub. The ops bot still cannot send real mail. CAS has not started.',
   },
 };

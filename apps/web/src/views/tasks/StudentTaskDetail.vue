@@ -24,6 +24,7 @@
         <p v-if="attachmentName" class="hint">{{ attachmentName }}</p>
         <div class="pad-btn"><van-button block type="primary" native-type="submit">{{ t('submitWork') }}</van-button></div>
       </van-form>
+      <ThreadBox v-if="progress?.status" :task-id="taskId" :student-id="ownStudentId" />
       <p v-if="message" class="hint">{{ message }}</p>
       <p v-if="error" class="error">{{ error }}</p>
     </section>
@@ -37,6 +38,7 @@ import { useRoute } from 'vue-router';
 import { FUNCTIONS } from '@hst/shared';
 import { canMarkDone, canStart, canSubmit, type ProgressGate } from '@hst/core';
 import { callFunction, uploadDevFile } from '../../api';
+import ThreadBox from '../messages/ThreadBox.vue';
 import { formatDue } from './format';
 
 const { t, locale } = useI18n();
@@ -50,18 +52,20 @@ const attachmentName = ref('');
 const error = ref('');
 const message = ref('');
 const taskId = String(route.params.taskId);
+const ownStudentId = ref('');
 const gate = computed<ProgressGate>(() => ({
   status: progress.value?.status ?? 'not_started',
   requiresSubmission: task.value?.requiresSubmission !== false,
 }));
 
 async function load() {
-  const result = await callFunction<{ task: typeof task.value; progress?: { status: string; displayStatus: string }; assessment?: typeof grade.value }>(FUNCTIONS.apiAcademic, 'task.get', { taskId });
+  const result = await callFunction<{ task: typeof task.value; progress?: { status: string; displayStatus: string }; assessment?: typeof grade.value; studentId?: string }>(FUNCTIONS.apiAcademic, 'task.get', { taskId });
   if (!result.ok) error.value = result.error.message;
   else {
     task.value = result.data.task;
     progress.value = result.data.progress ?? null;
     grade.value = result.data.assessment ?? null;
+    ownStudentId.value = result.data.studentId ?? ownStudentId.value;
   }
 }
 async function start() {

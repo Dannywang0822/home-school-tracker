@@ -23,7 +23,7 @@ https://dannywang0822.github.io/home-school-tracker/#/plan
 | W2 组织与账号 | 已完成 | 已合入 main，`6a28151`（2026-11-09） |
 | W3 任务与完成跟踪 | 已完成 | 已合入 main，`980587b`（2026-11-09） |
 | W4 IB 评估 | 已完成 | 本分支实现（2026-11-13）。老师可打分并发布，家长和学生只看已发布成绩 |
-| W5 反馈与通知 | 计划中 | 尚未开始。第 4 周只留下站内通知和老师评语 |
+| W5 反馈与通知 | 已完成 | 本分支实现（2026-11-13）。通知中心、留言和发件队列可用。运营 bot 仍不能真正发信 |
 | W6 CAS | 计划中 | 尚未开始 |
 | W7 里程碑 | 计划中 | 尚未开始 |
 | W8 看板、审计、上云 | 计划中 | 尚未开始。当前仍不是 CloudBase 生产站 |
@@ -66,11 +66,11 @@ https://dannywang0822.github.io/home-school-tracker/#/plan
 - 交付 / 验收：老师发布后，家长和学生能看到分数和评语。TX-03、TX-04、PX-22 通过。
 - 现状：本分支实现。静态演示里 `t1` 可以给「科学实验」打分并发布，`p1` 在成绩页看到。「科学测验」仍是已发布示例。通知中心、运营发信和 CAS 不在本周。
 
-**W5 · 反馈与通知**（计划中，2026-11-13）
+**W5 · 反馈与通知**（已完成，2026-11-13）
 
 - 目标：对话串、未读、邮件队列、每周汇总、通知偏好。微信订阅消息保持空实现。
-- 交付 / 验收：成绩发布后家长的邮件进入队列。相关 PX/ST 用例通过。
-- 现状：尚未开始。第 4 周发布成绩时会写一条站内通知和老师评语。
+- 交付 / 验收：成绩发布后家长的邮件进入队列。PX-03/07/13/20/22、ST-06/07/08 通过。
+- 现状：本分支实现通知中心、任务留言和发件队列。运营 bot 还不能真正发信。
 
 **W6 · CAS**（计划中，2026-11-13）
 
@@ -165,7 +165,7 @@ Progress date: **2026-11-13** (Asia/Shanghai).
 | W2 Organisation and accounts | Done | On main, `6a28151` (2026-11-09) |
 | W3 Tasks and completion | Done | On main, `980587b` (2026-11-09) |
 | W4 IB assessment | Done | Implemented on this branch (2026-11-13). Teachers can score and release; parents and students see released grades only |
-| W5 Feedback and notifications | Planned | Not started. Week 4 only leaves an in-app notice and a teacher comment |
+| W5 Feedback and notifications | Done | Implemented on this branch (2026-11-13). Notification center, comments and the outbox work. The ops bot still cannot send real mail |
 | W6 CAS | Planned | Not started |
 | W7 Milestones | Planned | Not started |
 | W8 Dashboards, audit, cloud deploy | Planned | Not started. This is still not the CloudBase production site |
@@ -206,11 +206,11 @@ Use Done / In progress / Paused / Planned. When the status changes, update this 
 - Delivery: after release, the parent and student see the score and comment. TX-03, TX-04 and PX-22 pass.
 - Now: implemented on this branch. In the static demo, `t1` can grade and release 「科学实验」, and `p1` sees it on the grades page. 「科学测验」 stays the released example. The notification center, ops mailer and CAS are not part of this week.
 
-**W5 · Feedback and notifications** (Planned, 2026-11-13)
+**W5 · Feedback and notifications** (Done, 2026-11-13)
 
 - Goal: threads, unread counts, the mail queue, weekly digests, preferences. WeChat subscribe stays a stub.
-- Delivery: a released grade queues mail for the parent. Related PX/ST cases pass.
-- Now: not started. Releasing a grade in week 4 writes an in-app notice and a teacher comment.
+- Delivery: a released grade queues mail for the parent. PX-03/07/13/20/22 and ST-06/07/08 pass.
+- Now: this branch adds the notification center, task comments and the outbox. The ops bot still cannot send real mail.
 
 **W6 · CAS** (Planned, 2026-11-13)
 

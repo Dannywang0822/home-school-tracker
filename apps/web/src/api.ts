@@ -55,6 +55,10 @@ export function verifyEmailCode(email: string, code: string) {
   return post<{ token: string }>('/api/dev/email-code/verify', { email, code });
 }
 
+export function previewDemoMail() {
+  return post<{ items: Array<{ outboxId: string; subject: string; text: string; to: string }> }>('/api/dev/mail', {}, true);
+}
+
 export function uploadDevFile(name: string, mime: string, dataBase64: string) {
   return post<{ tmpCloudFileId: string; size: number }>('/api/dev/upload', { name, mime, dataBase64 }, true);
 }
