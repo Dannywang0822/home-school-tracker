@@ -12,6 +12,8 @@ import {
 import type { ActionContext } from '../auth/registry.js';
 import { registerAction } from '../auth/registry.js';
 import type { Doc } from '../db/types.js';
+import { bumpUnread, participantUserIds, unreadFor } from '../notify/threads.js';
+import { emitNotification } from '../notify/emit.js';
 import { asNumber, asString, asStringArray, isRecord, nid, sha256, weekBoundsShanghai } from '../util.js';
 
 const idSchema = z.string().min(1).max(80);
@@ -394,7 +396,7 @@ registerAction({
   name: 'thread.listMine',
   fn: FUNCTIONS.apiAcademic,
   roles: ['teacher', 'student', 'parent', 'admin', 'supervisor', 'cas_coordinator', 'ee_coordinator'],
-  input: z.object({ studentId: idSchema.optional() }).strip(),
+  input: z.object({ studentId: idSchema.optional(), unreadOnly: z.boolean().optional() }).strip(),
   scope: async (ctx, input) => {
     if (!input.studentId) return true;
     if (ctx.caller.roles.includes('parent')) return (await activeChildIds(ctx)).includes(input.studentId);
@@ -402,17 +404,28 @@ registerAction({
     return canReadStudentAcademic(ctx, input.studentId);
   },
   async handler(ctx, input) {
-    const ids = await threadStudentIds(ctx, input.studentId);
-    const threads = await ctx.repo.listThreadsForStudents(ids, ctx.caller.schoolId);
-    return {
-      items: threads.map((doc) => ({
+    const threads = await threadsForCaller(ctx, input.studentId);
+    const items = [];
+    for (const doc of threads) {
+      const unreadCount = await unreadFor(ctx.repo, doc._id, ctx.caller.userId);
+      if (input.unreadOnly && unreadCount === 0) continue;
+      const student = await ctx.repo.getStudent(asString(doc.studentId) ?? '');
+      const user = student ? await ctx.repo.getUser(asString(student.userId) ?? '') : null;
+      const task = doc.contextType === 'task' ? await ctx.repo.getTask(asString(doc.contextId) ?? '') : null;
+      items.push({
         threadId: doc._id,
         contextType: doc.contextType,
+        contextId: doc.contextId,
+        contextTitle: asString(task?.title) ?? '',
         studentId: doc.studentId,
+        studentName: displayNameOf(user),
         lastMessageAt: doc.lastMessageAt,
         lastMessagePreview: typeof doc.lastMessagePreview === 'string' ? doc.lastMessagePreview.slice(0, 60) : '',
-      })),
-    };
+        unreadCount,
+      });
+    }
+    items.sort((a, b) => (b.unreadCount - a.unreadCount) || ((asNumber(b.lastMessageAt) ?? 0) - (asNumber(a.lastMessageAt) ?? 0)));
+    return { items };
   },
 });
 
@@ -457,21 +470,58 @@ registerAction({
   },
   async handler(ctx, input) {
     const thread = await ctx.repo.getThread(input.threadId);
+    if (!thread) throw new AppError('NOT_FOUND', '资源不存在');
+    const window = String(Math.floor(ctx.clock.now() / 60_000));
+    const limit = await ctx.repo.hitRateLimit('message.post', ctx.caller.userId, window, 10);
+    if (!limit.allowed) throw new AppError('RATE_LIMITED', '操作太频繁，请稍后再试');
     const messageId = nid('msg_');
     const now = ctx.clock.now();
+    const authorRole = ctx.caller.roles.includes('parent') ? 'parent' : ctx.caller.roles.includes('student') ? 'student' : 'teacher';
+    const kind = authorRole === 'parent' ? 'parent_message' : authorRole === 'student' ? 'student_reflection' : 'teacher_comment';
     await ctx.repo.insertMessage({
       _id: messageId,
       threadId: input.threadId,
-      studentId: thread?.studentId,
+      studentId: thread.studentId,
       schoolId: ctx.caller.schoolId,
       authorId: ctx.caller.userId,
-      authorRole: ctx.caller.roles.includes('parent') ? 'parent' : ctx.caller.roles.includes('student') ? 'student' : 'teacher',
-      kind: ctx.caller.roles.includes('parent') ? 'parent_message' : ctx.caller.roles.includes('student') ? 'student_reflection' : 'teacher_comment',
+      authorRole,
+      kind,
       body: input.body,
       visibility: 'all',
       createdAt: now,
       schemaVersion: 1,
     });
+    await ctx.repo.db.compareAndSet(COLLECTIONS.threads, thread._id, undefined, {
+      lastMessageAt: now,
+      lastMessagePreview: input.body.slice(0, 60),
+      messageCount: (asNumber(thread.messageCount) ?? 0) + 1,
+      updatedAt: now,
+    });
+    await bumpUnread(ctx.repo, thread, ctx.caller.userId, now);
+    const task = thread.contextType === 'task' ? await ctx.repo.getTask(asString(thread.contextId) ?? '') : null;
+    const people = await participantUserIds(ctx.repo, thread, ctx.caller.schoolId);
+    const recipients = [];
+    for (const userId of people) {
+      if (userId === ctx.caller.userId) continue;
+      const user = await ctx.repo.getUser(userId);
+      const roles = asStringArray(user?.roles);
+      const reason = roles.includes('parent') ? 'guardian' as const : roles.includes('student') ? 'student' as const : 'teacher' as const;
+      recipients.push({ userId, reason });
+    }
+    await emitNotification(
+      {
+        type: authorRole === 'parent' ? 'feedback_new' : 'comment_new',
+        studentId: asString(thread.studentId),
+        refType: 'thread',
+        refId: thread._id,
+        importance: 'normal',
+        dedupeKey: `msg:${messageId}`,
+        recipients,
+        link: `/p/tasks/${asString(thread.contextId) ?? ''}?student=${asString(thread.studentId) ?? ''}`,
+        vars: { title: asString(task?.title) ?? '消息', taskTitle: asString(task?.title) ?? '' },
+      },
+      { repo: ctx.repo, clock: ctx.clock, fromAddress: ctx.config.mailFrom, schoolId: ctx.caller.schoolId },
+    );
     return { messageId };
   },
 });
@@ -585,6 +635,19 @@ async function canAccessThread(ctx: ActionContext, thread: Doc): Promise<boolean
     return true;
   }
   return false;
+}
+
+async function threadsForCaller(ctx: ActionContext, studentId?: string): Promise<Doc[]> {
+  const staffOnly = ctx.caller.roles.includes('teacher') && !ctx.caller.roles.includes('parent') && !ctx.caller.roles.includes('student');
+  if (staffOnly) {
+    const rows = await ctx.repo.db.query(
+      COLLECTIONS.threads,
+      (doc) => doc.deletedAt == null && doc.schoolId === ctx.caller.schoolId && asStringArray(doc.staffUserIds).includes(ctx.caller.userId),
+    );
+    return studentId ? rows.filter((doc) => doc.studentId === studentId) : rows;
+  }
+  const ids = await threadStudentIds(ctx, studentId);
+  return ctx.repo.listThreadsForStudents(ids, ctx.caller.schoolId);
 }
 
 async function threadStudentIds(ctx: ActionContext, requested?: string): Promise<string[]> {

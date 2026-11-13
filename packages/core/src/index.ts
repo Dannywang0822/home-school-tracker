@@ -9,6 +9,7 @@ export { configFromEnv, type AppConfig } from './config.js';
 export { createDispatcher, type DispatchDeps } from './dispatch.js';
 export { createFunctionMain, createCronMain, normalizeEvent } from './cloud.js';
 export { emitNotification } from './notify/emit.js';
+export { maintainOutbox, runWeeklyDigest } from './notify/digest.js';
 export { EmailOutboxAdapter } from './notify/email-outbox.js';
 export { WechatSubscribeAdapter } from './notify/wechat.js';
 export { evaluateDatabaseRead, evaluateDatabaseWrite, evaluateInvoke, evaluateStorage, bundledDatabaseRules, bundledFunctionRules, bundledStorageRules } from './rules/evaluate.js';

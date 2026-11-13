@@ -97,3 +97,24 @@ registerAction({
     return { status: retry ? 'pending' : 'failed' };
   },
 });
+
+registerAction({
+  name: 'ops.stats',
+  fn: FUNCTIONS.ops,
+  roles: ['ops_mailer'],
+  input: z.object({}).strip(),
+  scope: async () => true,
+  async handler(ctx) {
+    const now = ctx.clock.now();
+    const rows = await ctx.repo.listOutbox();
+    const live = rows.filter((row) => row.deletedAt == null);
+    const pending = live.filter((row) => row.status === 'pending');
+    const oldest = pending.reduce((min, row) => Math.min(min, asNumber(row.createdAt) ?? now), now);
+    return {
+      pending: pending.length,
+      claimed: live.filter((row) => row.status === 'claimed').length,
+      failed24h: live.filter((row) => row.status === 'failed' && now - (asNumber(row.updatedAt) ?? asNumber(row.createdAt) ?? 0) < 86_400_000).length,
+      oldestPendingAgeSec: pending.length === 0 ? 0 : Math.max(0, Math.floor((now - oldest) / 1000)),
+    };
+  },
+});

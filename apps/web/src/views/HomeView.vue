@@ -33,7 +33,10 @@
         </van-cell-group>
         <p v-else class="note">{{ t('noChildren') }}</p>
         <p class="note">{{ t('weekNote') }}</p>
+        <p class="hint"><router-link to="/notifications">{{ t('notifications') }}</router-link></p>
+        <p class="hint"><router-link to="/settings">{{ t('settings') }}</router-link></p>
         <p v-if="session.me?.user.roles.includes('teacher')" class="hint"><router-link to="/t/tasks">{{ t('classTasks') }}</router-link></p>
+        <p v-if="session.me?.user.roles.includes('teacher')" class="hint"><router-link to="/t/messages">{{ t('messages') }}</router-link></p>
         <p v-if="session.me?.user.roles.includes('student')" class="hint"><router-link to="/s/tasks">{{ t('myTasks') }}</router-link></p>
         <p v-if="session.me?.user.roles.includes('student')" class="hint"><router-link to="/s/grades">{{ t('grades') }}</router-link></p>
         <p v-if="session.me?.user.roles.includes('parent')" class="hint"><router-link to="/p/tasks">{{ t('childTasks') }}</router-link></p>

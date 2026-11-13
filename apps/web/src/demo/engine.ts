@@ -94,6 +94,28 @@ export async function demoRequest(path: string, body: unknown, token: string): P
     demo.sessions.set(issued, known.uid);
     return { ok: true, data: { token: issued }, requestId: 'demo-code' };
   }
+  if (path === '/api/dev/mail') {
+    const uid = demo.sessions.get(token) ?? (token.startsWith('demo.') ? token.slice(5) : '');
+    if (!uid) return { ok: false, error: { code: 'UNAUTHENTICATED', message: '未登录' }, requestId: 'demo-mail' };
+    const identities = await demo.db.query(
+      COLLECTIONS.authIdentities,
+      (doc) => doc.provider === 'cloudbase_uid' && doc.key === uid && doc.unboundAt == null,
+    );
+    const userId = identities[0]?.userId;
+    const rows = await demo.db.query(COLLECTIONS.outbox, (doc) => doc.toUserId === userId && doc.deletedAt == null);
+    return {
+      ok: true,
+      data: {
+        items: rows.map((row) => ({
+          outboxId: row._id,
+          subject: row.subject,
+          text: row.text,
+          to: row.to,
+        })),
+      },
+      requestId: 'demo-mail',
+    };
+  }
   if (path === '/api/dev/upload') {
     const uid = demo.sessions.get(token) ?? (token.startsWith('demo.') ? token.slice(5) : '');
     const name = typeof record.name === 'string' ? record.name.slice(0, 180) : '';
