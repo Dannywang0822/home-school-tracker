@@ -140,7 +140,6 @@ npm run preview -w @hst/web
 - 任务附件用内存里的 `ObjectStorage`。正式环境再换成 CloudBase 存储。
 - 发布任务后立即可见，靠写入完成记录，不是靠通知。逾期扫描不发邮件。
 - 静态演示把同一套权限代码跑在浏览器里。它不是学校正式系统。
-- 第 4 周及以后暂缓。
 
 ### 公开仓库与数据安全
 
@@ -280,7 +279,6 @@ Open http://127.0.0.1:4173/home-school-tracker/ .
 - Task files use an in-memory `ObjectStorage`. Production would swap in CloudBase storage.
 - A published task is visible because completion rows are written immediately, not because a notification was sent. The overdue scan does not send mail.
 - The static demo runs the same permission code in the browser. It is not the school’s live system.
-- Week 4 and later are paused.
 
 ### Public repository and data safety
 
